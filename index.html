@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QR SCANNER PRO v35</title>
+    <title>QR SCANNER PRO v36</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --safe-area-bottom: env(safe-area-inset-bottom); }
@@ -11,29 +11,70 @@
         body.ok { background:#28a745 !important; }
         body.ng { background:#dc3545 !important; }
 
-        #status-display { font-size: 8rem; font-weight: 900; height: 1.1em; text-shadow: 4px 4px 8px rgba(0,0,0,0.8); text-align: center; line-height: 1.1; flex-shrink: 0; }
-        .video-container { width: 95%; max-width: 400px; aspect-ratio: 1 / 1; border: 4px solid #fff; border-radius: 20px; overflow: hidden; margin: 0 auto; background: #222; flex-shrink: 0; }
+        /* ★判定表示：画面の横幅いっぱいの超巨大サイズ */
+        #status-display { 
+            font-size: 12rem; 
+            font-weight: 900; 
+            height: 1.1em; 
+            text-shadow: 6px 6px 12px rgba(0,0,0,0.9); 
+            text-align: center; 
+            line-height: 1.0; 
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        
+        /* カメラプレビュー：少しサイズを調整して文字スペースを確保 */
+        .video-container { 
+            width: 85%; 
+            max-width: 380px; 
+            aspect-ratio: 1 / 1; 
+            border: 5px solid #fff; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            margin: -10px auto 10px; 
+            background: #222; 
+            flex-shrink: 0; 
+        }
         #canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         
-        .info-panel { margin: 10px 12px; padding: 15px; background: rgba(255,255,255,0.25); border-radius: 15px; border: 3px solid #fff; text-align: center; flex-shrink: 0; }
-        .info-label { font-size: 1.1rem; margin-bottom: 5px; font-weight: bold; color: #eee; }
-        #target-info { font-size: 3.2rem; font-weight: 900; line-height: 1.1; word-break: break-all; color: #fff; text-shadow: 2px 2px 5px #000; }
+        /* ★製品名パネル：文字サイズを極限まで拡大 */
+        .info-panel { 
+            margin: 5px 10px; 
+            padding: 10px; 
+            background: rgba(255,255,255,0.3); 
+            border-radius: 15px; 
+            border: 4px solid #fff; 
+            text-align: center; 
+            flex-shrink: 0; 
+        }
+        .info-label { font-size: 1.4rem; margin-bottom: 2px; font-weight: bold; color: #eee; text-shadow: 1px 1px 3px #000; }
+        #target-info { 
+            font-size: 4.5rem; 
+            font-weight: 900; 
+            line-height: 1.0; 
+            word-break: break-all; 
+            color: #fff; 
+            text-shadow: 3px 3px 8px #000; 
+        }
 
-        .master-panel { background:#f4f7f9; color:#333; padding: 10px 15px; border-radius: 20px 20px 0 0; margin-top: auto; }
-        #master-select { width: 100%; padding: 15px; font-size: 1.3rem; border-radius: 12px; border: 2px solid #ccc; font-weight: bold; background: #fff; text-align: center; }
+        /* マスター変更プルダウン */
+        .master-panel { background:#f4f7f9; color:#333; padding: 8px 15px; border-radius: 20px 20px 0 0; margin-top: auto; }
+        #master-select { width: 100%; padding: 12px; font-size: 1.4rem; border-radius: 10px; border: 2px solid #ccc; font-weight: bold; background: #fff; text-align: center; }
 
-        .log-display-area { background: #fff; color: #333; height: 90px; overflow: hidden; padding: 0 20px; }
-        .log-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
+        /* ログエリア：高さを抑えてボタンを押しやすく */
+        .log-display-area { background: #fff; color: #333; height: 60px; overflow: hidden; padding: 0 20px; border-bottom: 1px solid #ddd; }
+        .log-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.2rem; }
 
-        .btn-group { background:#fff; padding: 10px 12px calc(5px + var(--safe-area-bottom)); display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; border-top: 1px solid #ddd; }
-        button { padding: 20px 5px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; font-size: 1.1rem; }
+        /* ボタン群 */
+        .btn-group { background:#fff; padding: 8px 10px calc(5px + var(--safe-area-bottom)); display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; }
+        button { padding: 18px 5px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; font-size: 1.1rem; }
         .btn-main { background:#007bff; color:white; }
         .btn-sub { background:#555; color:white; }
         
         #start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#111; display:flex; justify-content:center; align-items:center; z-index:9999; font-size:2rem; font-weight:bold; }
         .modal { position:fixed; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; background:#fff; z-index:5000; color:#333; }
         .modal-content { padding: 20px; flex-grow: 1; overflow-y: auto; }
-        #mini-canvas { width: 100%; max-width: 300px; transform: scaleX(-1); border-radius: 15px; border: 3px solid #000; background: #222; }
+        #mini-canvas { width: 100%; max-width: 320px; transform: scaleX(-1); border-radius: 15px; border: 3px solid #000; background: #222; }
     </style>
 </head>
 <body>
@@ -109,7 +150,7 @@ function playBeep(type) {
         o2.frequency.setValueAtTime(880, now + 0.15); g.gain.setValueAtTime(0.3, now + 0.15);
         o2.connect(g); o2.start(now + 0.15); o2.stop(now + 0.6);
     } else {
-        [0, 0.25].forEach(delay => {
+        [0, 0.22].forEach(delay => {
             [140, 175].forEach(f => {
                 const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
                 o.type='square'; o.frequency.setValueAtTime(f, now + delay);
@@ -176,7 +217,6 @@ function saveLog(res) {
     renderRecentLogs();
 }
 
-// ★マスター変更時の確認機能を追加
 function selectMasterFromPullDown() {
     const sel = document.getElementById("master-select");
     const val = sel.value;
@@ -212,7 +252,7 @@ function saveMasters() {
 function renderEditList() {
     document.getElementById("edit-list").innerHTML = masters.map((m, i) => `
         <div style="border-bottom:2px solid #ddd; padding:15px; display:flex; justify-content:space-between; align-items:center;">
-            <b style="font-size:1.2rem;">${m.name}</b>
+            <b style="font-size:1.4rem;">${m.name}</b>
             <button onclick="deleteMaster(${i})" style="color:red; background:none; border:2px solid red; padding:10px 15px; border-radius:8px; font-weight:bold;">削除</button>
         </div>
     `).join("");
@@ -221,7 +261,7 @@ function renderEditList() {
 function deleteMaster(i) { if (confirm("このマスターを削除しますか？")) { masters.splice(i,1); saveMasters(); } }
 
 function renderRecentLogs() {
-    const recent = logs.slice(-2).reverse();
+    const recent = logs.slice(-1).reverse();
     document.getElementById("recent-logs").innerHTML = recent.map(l => `
         <div class="log-item"><span><b style="color:${l.result==='OK'?'#28a745':'#dc3545'}">[${l.result}]</b> ${l.time}</span><span>${l.master}</span></div>
     `).join("");
@@ -241,19 +281,18 @@ function renderAnalysis() {
         if (l.result === "OK") { stats[key].ok++; totalOk++; } else { stats[key].ng++; totalNg++; }
     });
     let html = `<b>累計：</b> <span style="color:#28a745">OK ${totalOk}</span> / <span style="color:#dc3545">NG ${totalNg}</span><hr>`;
-    html += `<table style="width:100%; border-collapse:collapse; font-size:1rem;"><tr><th>日付</th><th>製品</th><th>OK</th><th>NG</th></tr>`;
+    html += `<table style="width:100%; border-collapse:collapse; font-size:1.1rem;"><tr><th>日付</th><th>製品</th><th>OK</th><th>NG</th></tr>`;
     Object.keys(stats).reverse().forEach(k => {
         const [d, m] = k.split("__");
         html += `<tr style="border-bottom:1px solid #ddd; text-align:center;"><td style="padding:10px">${d}</td><td style="text-align:left">${m}</td><td>${stats[k].ok}</td><td style="color:red">${stats[k].ng}</td></tr>`;
     });
     html += `</table>`;
     document.getElementById("summary-dashboard").innerHTML = html;
-    document.getElementById("full-log-list").innerHTML = logs.slice(-30).reverse().map(l => `<div style="padding:8px; border-bottom:1px solid #eee; font-size:0.9rem;">[${l.result}] ${l.date} ${l.time} - ${l.master}</div>`).join("");
+    document.getElementById("full-log-list").innerHTML = logs.slice(-30).reverse().map(l => `<div style="padding:10px; border-bottom:1px solid #eee; font-size:1rem;">[${l.result}] ${l.date} ${l.time} - ${l.master}</div>`).join("");
 }
 
 function clearLogs() { if (confirm("履歴をすべて削除しますか？")) { logs = []; localStorage.setItem("kb_v19_logs", "[]"); renderRecentLogs(); renderAnalysis(); } }
 
-// ★終了ボタンにも確認を追加
 function confirmFinish() {
     if (confirm("生産を終了し、マスター選択を解除しますか？")) {
         activeMaster = null;
