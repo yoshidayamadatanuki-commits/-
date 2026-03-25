@@ -7,7 +7,7 @@
 initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
      <title>QR SCANNER PRO v24</title>
 
-     <!-- jsQR 読み込み -->
+     <!-- jsQR 正しい読み込み -->
 
      <script
 src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -24,7 +24,6 @@ src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
              display: flex;
              flex-direction: column;
          }
-
          body.ok { background-color: #28a745 !important; }
          body.ng { background-color: #dc3545 !important; }
 
@@ -33,9 +32,11 @@ src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
              font-weight: 900;
              margin: 5px 0;
              height: 1.1em;
+             text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
          }
 
-         /* ★ カメラ部分を2倍に拡大 ★ */
+         /* ★ カメラ画面 2倍拡大 ★ */
+
          .video-container {
              width: 90%;
              max-width: 420px;
@@ -45,7 +46,6 @@ src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
              border-radius: 15px;
              overflow: hidden;
          }
-
          #canvas {
              width: 100%;
              height: 100%;
@@ -77,47 +77,38 @@ src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
              grid-template-columns: 1fr 1fr 1fr;
              gap: 12px;
          }
-
-         .btn-main { background:#007bff; color:white; padding:16px;
-border-radius:12px; }
-         .btn-sub  { background:#555; color:white; padding:16px;
-border-radius:12px; }
+         .btn-main {
+background:#007bff;color:white;padding:16px;border-radius:12px; }
+         .btn-sub  {
+background:#555;color:white;padding:16px;border-radius:12px; }
 
 
          #start-overlay {
-             position: fixed;
-             top:0;left:0;width:100%;height:100%;
+             position:fixed;top:0;left:0;width:100%;height:100%;
              background:#111;
+
              color:white;
+             display:flex;justify-content:center;align-items:center;
              font-size:1.5rem;
-             display:flex;
-             justify-content:center;
-             align-items:center;
              z-index:2000;
+
          }
 
          .modal {
              display:none;
-             position:fixed;
-             top:0;left:0;width:100%;height:100%;
+             position:fixed;top:0;left:0;width:100%;height:100%;
              background:white;
              color:#333;
              flex-direction:column;
              z-index:3000;
          }
-
          .edit-card {
-             background:#fafafa;
-             border:1px solid #ddd;
+             background:#fafafa;border:1px solid #ddd;
 
-             padding:10px;
-             margin-bottom:10px;
-             border-radius:10px;
+             padding:10px;margin-bottom:10px;border-radius:10px;
          }
-
          #mini-canvas {
-             width:100%;
-             max-width:200px;
+             width:100%;max-width:200px;
              transform:scaleX(-1);
              border-radius:8px;
 
@@ -158,7 +149,8 @@ style="margin-top:5px;font-size:0.9rem;"></div>
 style="background:#b40000;">■ 生産終了</button>
      </div>
 
-     <!-- マスター管理 -->
+     <!-- マスター管理モーダル -->
+
      <div id="mgmt-modal" class="modal">
          <div style="padding:20px; overflow-y:auto;">
 
@@ -176,7 +168,8 @@ onclick="registerNew()">今のQRを登録</button>
 style="margin:10px;">閉じる</button>
      </div>
 
-     <!-- 履歴 -->
+     <!-- 履歴モーダル -->
+
      <div id="log-modal" class="modal">
          <div style="padding:20px;overflow-y:auto;">
 
@@ -206,10 +199,10 @@ style="width:100%;">閉じる</button>
      </div>
 
 <script>
+/* =========================================================
+         JavaScript部分（誤検出防止 + 全機能版）
+========================================================= */
 
-/* =========================================
-         JS（誤検出フィルタ組込み版）
-========================================= */
 
 const video = document.createElement("video");
 const canvasElement = document.getElementById("canvas");
@@ -229,29 +222,27 @@ function playBeep(type) {
      const now = audioCtx.currentTime;
      if (type === "ok") {
          osc.frequency.setValueAtTime(660, now);
-         osc.frequency.setValueAtTime(523, now+0.15);
+         osc.frequency.setValueAtTime(523, now + 0.15);
      } else {
+
          osc.frequency.setValueAtTime(110, now);
      }
      gain.gain.setValueAtTime(0.1, now);
+     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
 
-     gain.gain.exponentialRampToValueAtTime(0.01, now+0.4);
-
-     osc.start(now); osc.stop(now+0.4);
+     osc.start(now); osc.stop(now + 0.4);
 }
 
-/* -----------------------------------
-      データ保持
------------------------------------ */
+/* ------------ データ ------------ */
+
 let currentQR = "";
 let activeMaster = null;
 let masters = JSON.parse(localStorage.getItem("kb_v19_masters")) || [];
 let logs    = JSON.parse(localStorage.getItem("kb_v19_logs"))    || [];
 let isProcessing = false;
 
-/* -----------------------------------
-      カメラ起動
------------------------------------ */
+/* ------------ カメラ開始 ------------ */
+
 function startApp() {
      document.getElementById("start-overlay").style.display = "none";
 
@@ -264,19 +255,78 @@ function startApp() {
      });
 }
 
-/* -----------------------------------
-      QR読み取りループ
------------------------------------ */
+/* ------------ QR読取ループ ------------ */
+
 function tick() {
      if (video.readyState === video.HAVE_ENOUGH_DATA) {
 
-元のメッセージを表示
+         canvasElement.width  = video.videoWidth;
+         canvasElement.height = video.videoHeight;
+         canvas.drawImage(video,0,0);
+
+         if (miniCanvas) {
+             const mc = document.getElementById("mini-canvas");
+             mc.width = 320; mc.height = 320;
+             miniCanvas.drawImage(video,0,0,320,320);
+         }
+
+         const img =
+canvas.getImageData(0,0,canvasElement.width,canvasElement.height);
+         const code = jsQR(img.data, img.width, img.height);
+
+         if (code) {
+
+             /* -----------------------------
+                 ★ 誤検出フィルタリング ★
+             ----------------------------- */
+
+             // 大きさが小さいものは無視
+
+             const qrWidth = Math.hypot(
+                 code.location.topLeftCorner.x -
+code.location.topRightCorner.x,
+                 code.location.topLeftCorner.y -
+code.location.topRightCorner.y
+             );
+             if (qrWidth < canvasElement.width * 0.15) return
+requestAnimationFrame(tick);
+
+             // 内容が短すぎるデータは無視
+
+             if (!code.data || code.data.length < 5) return
+requestAnimationFrame(tick);
+
+             // QR位置 → 画面中央寄りか？
+
+             const cx = canvasElement.width  / 2;
+             const cy = canvasElement.height / 2;
+
+             const qx = (
+                 code.location.topLeftCorner.x +
+                 code.location.topRightCorner.x +
+                 code.location.bottomLeftCorner.x +
+                 code.location.bottomRightCorner.x
+             ) / 4;
+
+             const qy = (
+                 code.location.topLeftCorner.y +
+                 code.location.topRightCorner.y +
+                 code.location.bottomLeftCorner.y +
+                 code.location.bottomRightCorner.y
+             ) / 4;
+
+             if (Math.abs(qx - cx) > canvasElement.width * 0.30 ||
+                 Math.abs(qy - cy) > canvasElement.height * 0.30) {
+                 return requestAnimationFrame(tick);
+             }
+
+             /* 正常読み取り */
+
              currentQR = code.data;
 
              if (!isProcessing && activeMaster &&
 document.getElementById("mgmt-modal").style.display !== "flex") {
                  isProcessing = true;
-
                  const isOk = (currentQR === activeMaster.code);
                  playBeep(isOk ? "ok" : "ng");
                  updateStatus(isOk);
@@ -287,9 +337,8 @@ document.getElementById("mgmt-modal").style.display !== "flex") {
      requestAnimationFrame(tick);
 }
 
-/* ------------------------------
-      状態表示
------------------------------- */
+/* ------------ 状態表示 ------------ */
+
 function updateStatus(ok) {
      document.body.className = ok ? "ok" : "ng";
      document.getElementById("status-display").innerText = ok ? "OK" : "NG";
@@ -302,53 +351,45 @@ function updateStatus(ok) {
      },1500);
 }
 
-/* ------------------------------
-      ログ保存
------------------------------- */
-function saveLog(result) {
+/* ------------ ログ保存 ------------ */
+
+function saveLog(res) {
      const now = new Date();
      logs.push({
          date: now.toLocaleDateString(),
          time: now.toLocaleTimeString([], {hour:'2-digit',
 minute:'2-digit'}),
          master: activeMaster.name,
-         result: result
-
+         result: res
      });
      localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
 }
 
-/* ------------------------------
-      マスター選択
------------------------------- */
+/* ------------ プルダウン選択 ------------ */
 function selectMasterFromPullDown() {
-     const i = document.getElementById("master-select").value;
-     activeMaster = masters[i];
+     const idx = document.getElementById("master-select").value;
+     activeMaster = masters[idx];
+
      document.getElementById("target-info").innerText =
 `生産中：${activeMaster.name}`;
 }
 
-/* ------------------------------
-      マスター描画
------------------------------- */
+/* ------------ プルダウン描画 ------------ */
+
 function renderMasters() {
      const sel = document.getElementById("master-select");
      sel.innerHTML = masters.map((m,i)=>
          `<option value="${i}" ${activeMaster &&
-m.code===activeMaster.code?'selected':''}>${m.name}</option>`
+m.code===activeMaster.code?"selected":""}>${m.name}</option>`
      ).join("");
-
      document.getElementById("master-count").innerText =
 `登録数：${masters.length} 件`;
 }
 
-/* ------------------------------
-      新規登録
------------------------------- */
+/* ------------ マスター登録 ------------ */
 function registerNew() {
      if (!currentQR) return alert("QRが読み取れていません");
-
-     const name = prompt("製品名を入力");
+     const name = prompt("製品名:");
 
      if (name) {
          masters.push({name:name, code:currentQR});
@@ -356,36 +397,32 @@ function registerNew() {
      }
 }
 
-/* ------------------------------
-      編集
------------------------------- */
+/* ------------ 編集 ------------ */
 function editMaster(i) {
-     const name = prompt("新しい名前", masters[i].name);
-     if (name) {
-         masters[i].name = name;
+     const newName = prompt("新しい名前", masters[i].name);
+
+     if (newName) {
+         masters[i].name = newName;
          saveMasters();
      }
 }
-
 function deleteMaster(i) {
      if (!confirm("削除しますか？")) return;
+
      if (activeMaster && masters[i].code===activeMaster.code)
-activeMaster=null;
+activeMaster = null;
      masters.splice(i,1);
      saveMasters();
 }
-
 function saveMasters() {
      localStorage.setItem("kb_v19_masters", JSON.stringify(masters));
      renderMasters();
      renderEditList();
-     if (!activeMaster) document.getElementById("target-info").innerText
-= "生産中：未選択";
+     if (!activeMaster)
+document.getElementById("target-info").innerText="生産中：未選択";
 }
 
-/* ------------------------------
-      編集リスト
------------------------------- */
+/* ------------ 編集リスト描画 ------------ */
 function renderEditList() {
 
      document.getElementById("edit-list").innerHTML = masters.map((m,i)=>`
@@ -402,71 +439,61 @@ style="color:red;">削除</button>
      `).join("");
 }
 
-/* ------------------------------
-      モーダル
------------------------------- */
-function toggleModal(id){
+/* ------------ モーダル ------------ */
+
+function toggleModal(id) {
      const m = document.getElementById(id);
      m.style.display = (m.style.display==="flex") ? "none" : "flex";
-
      if (id==="log-modal") renderLogs();
 }
 
-/* ------------------------------
-      履歴表示
------------------------------- */
+/* ------------ 履歴表示 ------------ */
 function renderLogs() {
-     const summary = {};
-
+     const map = {};
      let totalOk = 0;
 
      logs.forEach(l=>{
          if (l.result==="OK") {
-
              totalOk++;
-             const key = `${l.date} [${l.master}]`;
-             summary[key] = (summary[key]||0)+1;
+             const k = `${l.date} [${l.master}]`;
+             map[k] = (map[k]||0)+1;
+
          }
      });
 
      document.getElementById("summary-list").innerHTML =
          `<b>総OK：${totalOk}件</b><hr>` +
-         Object.entries(summary).map(([k,v])=>`<div>${k}:
+         Object.entries(map).map(([k,v])=>`<div>${k}:
 ${v}件</div>`).join("");
 
 
      document.getElementById("log-list").innerHTML =
          logs.slice().reverse().map(l=>`
-             <div style="padding:5px 0;border-bottom:1px solid #ddd;">
+             <div style="padding:5px 0;border-bottom:1px solid #ccc;">
 
                  [${l.result}] ${l.time} ${l.master}
              </div>
          `).join("");
 }
 
-元のメッセージを表示しない
-/* ------------------------------
-      履歴削除
------------------------------- */
+/* ------------ 履歴リセット ------------ */
 function clearLogs() {
-     if (!confirm("履歴を消しますか？")) return;
-     logs=[];
+     if (!confirm("全削除しますか？")) return;
+     logs = [];
      localStorage.setItem("kb_v19_logs","[]");
      renderLogs();
 }
 
-/* ------------------------------
-      生産終了
------------------------------- */
+/* ------------ 生産終了 ------------ */
+
 function finishProduction() {
      activeMaster = null;
      document.getElementById("target-info").innerText="生産中：未選択";
      document.getElementById("master-select").value="";
 }
 
-/* ------------------------------
-      CSV出力
------------------------------- */
+/* ------------ CSV出力 ------------ */
+
 function exportCSV() {
      if (logs.length===0) return alert("履歴なし");
 
@@ -476,20 +503,19 @@ function exportCSV() {
      });
 
      const bom = new Uint8Array([0xEF,0xBB,0xBF]);
-     const blob = new Blob([bom, csv],{type:"text/csv"});
+     const blob = new Blob([bom,csv], {type:"text/csv"});
+
      const url  = URL.createObjectURL(blob);
 
      const a = document.createElement("a");
      a.href = url;
      a.download = "logs.csv";
      a.click();
-
      URL.revokeObjectURL(url);
 }
 
-/* ------------------------------
-      初期描画
------------------------------- */
+/* ------------ 初期描画 ------------ */
+
 renderMasters();
 renderEditList();
 
@@ -497,4 +523,3 @@ renderEditList();
 
 </body>
 </html>
-``
