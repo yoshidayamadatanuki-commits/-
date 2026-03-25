@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QR SCANNER PRO v23</title>
+    <title>QR SCANNER PRO v24</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --safe-area-bottom: env(safe-area-inset-bottom); }
@@ -23,25 +23,30 @@
         .btn-main { background: #007bff; color: white; box-shadow: 0 4px 0 #0056b3; }
         .btn-sub { background: #555; color: white; box-shadow: 0 4px 0 #333; }
         #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; z-index: 2000; font-size: 1.5rem; font-weight: bold; text-align: center; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; color: #333; z-index: 500; flex-direction: column; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; color: #333; z-index: 500; flex-direction: column; text-align: left; }
+        .edit-card { border: 1px solid #ddd; padding: 12px; margin-bottom: 10px; border-radius: 10px; background: #fafafa; }
+        #mini-canvas { width: 100%; max-width: 200px; border-radius: 8px; transform: scaleX(-1); border: 2px solid #000; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <div id="start-overlay" onclick="startApp()">タップして開始<br><small style="font-size:0.8rem; opacity:0.7;">(音声を有効にします)</small></div>
+    <div id="start-overlay" onclick="startApp()">タップして開始</div>
     <div id="status-display">READY</div>
     <div class="video-container"><canvas id="canvas"></canvas></div>
-    <div class="info-panel"><div id="target-info">生産中：マスター未選択</div></div>
+    <div class="info-panel"><div id="target-info">生産中：未選択</div></div>
     <div class="master-panel"><div id="master-container"></div></div>
     
     <div class="btn-group">
-        <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ 設定</button>
-        <button class="btn-sub" onclick="toggleModal('log-modal')">📊 履歴</button>
+        <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ 設定/登録</button>
+        <button class="btn-sub" onclick="toggleModal('log-modal')">📊 履歴/集計</button>
     </div>
 
     <div id="mgmt-modal" class="modal">
         <div style="padding:20px; flex-grow:1; overflow-y:auto;">
-            <h3>マスター設定</h3>
-            <button class="btn-main" style="width:100%; margin-bottom:15px;" onclick="registerNew()">＋ QR登録</button>
+            <h3>マスター管理</h3>
+            <div style="text-align: center; background: #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                <canvas id="mini-canvas"></canvas>
+                <button class="btn-main" style="width:100%;" onclick="registerNew()">今映っているQRを登録</button>
+            </div>
             <div id="edit-list"></div>
         </div>
         <div style="padding:15px; border-top:1px solid #ddd;"><button class="btn-sub" style="width:100%;" onclick="toggleModal('mgmt-modal')">閉じる</button></div>
@@ -56,7 +61,7 @@
             <div id="log-list"></div>
         </div>
         <div style="padding:15px; border-top:1px solid #ddd;">
-            <button style="width:100%; color:red; margin-bottom:10px; background:none; border:1px solid red; padding:10px; border-radius:8px;" onclick="clearLogs()">履歴リセット</button>
+            <button style="width:100%; color:red; margin-bottom:10px; border:1px solid red; background:none; padding:12px; border-radius:8px;" onclick="clearLogs()">履歴リセット</button>
             <button class="btn-sub" style="width:100%;" onclick="toggleModal('log-modal')">閉じる</button>
         </div>
     </div>
@@ -65,43 +70,28 @@
         const video = document.createElement("video");
         const canvasElement = document.getElementById("canvas");
         const canvas = canvasElement.getContext("2d", { alpha: false });
-        
-        // ★音声エンジンの改良
+        const miniCanvasElement = document.getElementById("mini-canvas");
+        const miniCanvas = miniCanvasElement.getContext("2d");
+
         let audioCtx;
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }
-
         function playBeep(type) {
-            if (!audioCtx) return;
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
-
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
+            osc.connect(gain); gain.connect(audioCtx.destination);
             const now = audioCtx.currentTime;
-
             if (type === 'ok') {
-                // 【ピンポーン】 2音構成
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(660, now); // ミ
-                osc.frequency.setValueAtTime(523.25, now + 0.15); // ド
+                osc.type = 'sine'; osc.frequency.setValueAtTime(660, now);
+                osc.frequency.setValueAtTime(523.25, now + 0.15);
                 gain.gain.setValueAtTime(0.1, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                osc.start(now);
-                osc.stop(now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
             } else {
-                // 【ブブー】 低い矩形波
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(110, now); // ラ
+                osc.type = 'square'; osc.frequency.setValueAtTime(110, now);
                 gain.gain.setValueAtTime(0.1, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-                osc.start(now);
-                osc.stop(now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
             }
         }
 
@@ -112,7 +102,6 @@
         let isProcessing = false;
 
         function startApp() {
-            initAudio(); // 音声初期化
             document.getElementById("start-overlay").style.display = "none";
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 1280, height: 1280 } }).then(s => {
                 video.srcObject = s; video.setAttribute("playsinline", true); video.play();
@@ -125,12 +114,18 @@
                 canvasElement.height = video.videoHeight;
                 canvasElement.width = video.videoWidth;
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                
+                // ミニプレビュー（登録画面用）の更新
+                miniCanvasElement.width = 320;
+                miniCanvasElement.height = 320;
+                miniCanvas.drawImage(video, 0, 0, 320, 320);
+
                 const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
                 const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
 
                 if (code) {
                     currentQR = code.data;
-                    if (!isProcessing && activeMaster && document.querySelectorAll('.modal[style*="flex"]').length === 0) {
+                    if (!isProcessing && activeMaster && document.getElementById('mgmt-modal').style.display !== 'flex') {
                         isProcessing = true;
                         const isOk = (currentQR === activeMaster.code);
                         playBeep(isOk ? 'ok' : 'ng');
@@ -175,25 +170,48 @@
         }
 
         function registerNew() {
-            if (!currentQR) return alert("QRを映してください");
-            const name = prompt("製品名:");
-            if (name) { masters.push({ name, code: currentQR }); saveMasters(); }
+            if (!currentQR) return alert("QRコードが認識されていません。カメラに映してください。");
+            const name = prompt("製品名を入力してください:");
+            if (name) {
+                masters.push({ name: name, code: currentQR });
+                saveMasters();
+                alert("登録しました");
+            }
+        }
+
+        function editMaster(i) {
+            const newName = prompt("新しい製品名を入力:", masters[i].name);
+            if (newName) {
+                masters[i].name = newName;
+                saveMasters();
+            }
+        }
+
+        function deleteMaster(i) {
+            if (confirm(`「${masters[i].name}」を削除しますか？`)) {
+                if (activeMaster && masters[i].code === activeMaster.code) activeMaster = null;
+                masters.splice(i, 1);
+                saveMasters();
+            }
         }
 
         function saveMasters() {
             localStorage.setItem("kb_v19_masters", JSON.stringify(masters));
-            renderMasters(); renderEditList();
+            renderMasters();
+            renderEditList();
+            if (!activeMaster) document.getElementById("target-info").innerText = "生産中：未選択";
         }
 
         function renderEditList() {
             document.getElementById("edit-list").innerHTML = masters.map((m, i) => `
-                <div style="border:1px solid #ccc; padding:10px; margin-top:10px; border-radius:8px;">
-                    <b>${m.name}</b><br><button onclick="deleteMaster(${i})" style="color:red; background:none; border:none; padding:5px;">削除</button>
+                <div class="edit-card">
+                    <div style="font-weight:bold; margin-bottom:5px;">${m.name}</div>
+                    <div style="font-size:0.7rem; color:#666; word-break:break-all; margin-bottom:8px;">CODE: ${m.code}</div>
+                    <button onclick="editMaster(${i})" style="padding:6px 12px; font-size:0.8rem; background:#eee; border-radius:6px; margin-right:5px;">名前変更</button>
+                    <button onclick="deleteMaster(${i})" style="padding:6px 12px; font-size:0.8rem; background:#ffebeb; color:red; border-radius:6px;">削除</button>
                 </div>
             `).join('');
         }
-
-        function deleteMaster(i) { if(confirm("削除？")) { masters.splice(i, 1); saveMasters(); } }
 
         function toggleModal(id) {
             const m = document.getElementById(id);
@@ -206,12 +224,13 @@
             let totalOk = 0;
             logs.forEach(l => { if (l.result === "OK") { totalOk++; const key = `${l.date} [${l.master}]`; summaryMap[key] = (summaryMap[key] || 0) + 1; } });
             document.getElementById("summary-list").innerHTML = `<b>総OK：${totalOk}件</b><hr>` + Object.entries(summaryMap).reverse().map(([k, c]) => `<div>${k}: ${c}件</div>`).join('');
-            document.getElementById("log-list").innerHTML = logs.slice().reverse().map(l => `<div>[${l.result}] ${l.time} ${l.master}</div>`).join('');
+            document.getElementById("log-list").innerHTML = logs.slice().reverse().map(l => `<div style="padding:5px 0; border-bottom:1px solid #eee;">[${l.result}] ${l.time} ${l.master}</div>`).join('');
         }
 
-        function clearLogs() { if(confirm("全消去？")) { logs = []; localStorage.setItem("kb_v19_logs", JSON.stringify(logs)); renderLogs(); } }
+        function clearLogs() { if(confirm("履歴をすべて消去しますか？")) { logs = []; localStorage.setItem("kb_v19_logs", JSON.stringify(logs)); renderLogs(); } }
 
-        renderMasters(); renderEditList();
+        renderMasters();
+        renderEditList();
     </script>
 </body>
 </html>
