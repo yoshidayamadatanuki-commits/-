@@ -3,44 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QR SCANNER PRO v27</title>
+    <title>QR SCANNER PRO v29</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --safe-area-bottom: env(safe-area-inset-bottom); }
         body { margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow: hidden; }
         body.ok { background:#28a745 !important; }
         body.ng { background:#dc3545 !important; }
+
+        /* ★判定表示をさらに巨大化 (OK/NG) */
+        #status-display { font-size: 6rem; font-weight: 900; margin: 0; padding: 10px 0; height: 1.2em; text-shadow: 3px 3px 6px rgba(0,0,0,0.7); line-height: 1; }
         
-        /* 判定表示 */
-        #status-display { font-size: 3.5rem; font-weight: 900; margin: 5px 0; height: 1.1em; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        
-        /* ★カメラ映像を大きく (90%) */
-        .video-container { width: 90%; max-width: 400px; aspect-ratio: 1 / 1; border: 3px solid #fff; border-radius: 15px; overflow: hidden; margin: 0 auto; background: #222; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        /* カメラ映像 */
+        .video-container { width: 85%; max-width: 380px; aspect-ratio: 1 / 1; border: 3px solid #fff; border-radius: 15px; overflow: hidden; margin: 0 auto; background: #222; }
         #canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         
-        /* 情報パネル */
-        .info-panel { margin: 8px 12px; padding: 8px; background: rgba(255,255,255,0.15); border-radius: 10px; font-size: 1rem; font-weight: bold; }
-        
-        /* ★マスター選択（枠を狭くスリムに） */
-        .master-panel { background:#f4f7f9; color:#333; padding: 10px 15px; border-radius: 20px 20px 0 0; }
-        .master-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 0.85rem; font-weight: bold; }
-        #master-select { width: 100%; padding: 10px; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; }
+        /* ★「生産中」パネルを巨大化 */
+        .info-panel { margin: 10px 12px; padding: 15px; background: rgba(255,255,255,0.25); border-radius: 12px; border: 2px solid #fff; }
+        #target-info { font-size: 2.2rem; font-weight: 900; color: #fff; text-shadow: 1px 1px 3px #000; overflow-wrap: break-word; }
+        .info-label { font-size: 0.9rem; opacity: 0.8; margin-bottom: 5px; }
 
-        /* ★履歴表示エリアを広く */
-        .log-display-area { background: #fff; color: #333; flex-grow: 1; overflow-y: auto; text-align: left; padding: 0 15px; font-size: 0.9rem; }
-        .log-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        /* マスター選択 */
+        .master-panel { background:#f4f7f9; color:#333; padding: 8px 15px; border-radius: 20px 20px 0 0; }
+        #master-select { width: 100%; padding: 12px; font-size: 1.1rem; border-radius: 8px; border: 1px solid #ccc; font-weight: bold; }
 
-        /* ボタン群 */
+        /* ★ログの表示数を半分に（高さを制限） */
+        .log-display-area { background: #fff; color: #333; height: 120px; overflow-y: hidden; text-align: left; padding: 5px 15px; font-size: 1rem; }
+        .log-item { padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; }
+
+        /* 下部ボタン */
         .btn-group { background:#fff; padding: 10px 12px calc(10px + var(--safe-area-bottom)); display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; border-top: 1px solid #ddd; }
-        button { padding: 14px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
         .btn-main { background:#007bff; color:white; }
         .btn-sub { background:#555; color:white; }
         
-        /* モーダル */
-        #start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#111; display:flex; justify-content:center; align-items:center; z-index:2000; font-size:1.5rem; }
-        .modal { position:fixed; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; background:#fff; z-index:5000; color:#333; text-align: left; }
+        #start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#111; display:flex; justify-content:center; align-items:center; z-index:2000; font-size:1.5rem; text-align:center; }
+        .modal { position:fixed; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; background:#fff; z-index:5000; color:#333; }
         #mini-canvas { width: 100%; max-width: 200px; transform: scaleX(-1); border-radius: 10px; border: 2px solid #000; margin-bottom: 10px; }
-        .edit-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 8px; border-radius: 8px; background: #fafafa; }
     </style>
 </head>
 <body>
@@ -50,21 +49,18 @@
     
     <div class="video-container"><canvas id="canvas"></canvas></div>
     
-    <div class="info-panel"><div id="target-info">生産中：未選択</div></div>
+    <div class="info-panel">
+        <div class="info-label">▼ 現在の照合マスター</div>
+        <div id="target-info">未選択</div>
+    </div>
 
     <div class="master-panel">
-        <div class="master-header">
-            <span>マスター選択</span>
-            <span id="master-count" style="color:#666;">登録：0件</span>
-        </div>
         <select id="master-select" onchange="selectMasterFromPullDown()">
-            <option value="">-- 選択してください --</option>
+            <option value="">-- 切り替えはこちら --</option>
         </select>
     </div>
 
-    <div class="log-display-area" id="recent-logs">
-        <div style="color:#999; text-align:center; margin-top:20px;">判定履歴がここに表示されます</div>
-    </div>
+    <div class="log-display-area" id="recent-logs"></div>
 
     <div class="btn-group">
         <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ 設定</button>
@@ -86,13 +82,12 @@
 
     <div id="log-modal" class="modal">
         <div style="padding:20px; flex-grow:1; overflow-y:auto;">
-            <h3>集計・詳細履歴</h3>
+            <h3>詳細履歴</h3>
             <div id="summary-area" style="background:#eef6ff;padding:15px;border-radius:12px;margin-bottom:15px;"><div id="summary-list"></div></div>
             <div id="full-log-list"></div>
         </div>
         <div style="padding:15px; border-top:1px solid #eee;">
-            <button onclick="exportCSV()" style="width:100%;background:#008800;color:white;padding:14px;border-radius:10px;margin-bottom:10px;">📤 CSV出力 (logs.csv)</button>
-            <button onclick="clearLogs()" style="width:100%;background:none;color:red;border:1px solid red;padding:12px;border-radius:10px;margin-bottom:10px;">履歴リセット</button>
+            <button onclick="exportCSV()" style="width:100%;background:#008800;color:white;padding:14px;border-radius:10px;margin-bottom:10px;">📤 CSV出力</button>
             <button class="btn-sub" style="width:100%;" onclick="toggleModal('log-modal')">閉じる</button>
         </div>
     </div>
@@ -108,17 +103,26 @@ let audioCtx;
 function playBeep(type) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === "suspended") audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
     const now = audioCtx.currentTime;
     if (type === "ok") {
-        osc.frequency.setValueAtTime(660, now); osc.frequency.setValueAtTime(523, now + 0.15);
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(698, now + 0.15);
+        gain.gain.setValueAtTime(0.3, now);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(now); osc.stop(now + 0.5);
     } else {
-        osc.frequency.setValueAtTime(110, now);
+        [140, 175, 225].forEach(f => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(f, now);
+            gain.gain.setValueAtTime(0.4, now);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(now); osc.stop(now + 0.6);
+        });
     }
-    gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-    osc.start(now); osc.stop(now + 0.4);
 }
 
 let masters = JSON.parse(localStorage.getItem("kb_v19_masters")) || [];
@@ -131,29 +135,24 @@ let seenCount = 0;
 
 function startApp() {
     document.getElementById("start-overlay").style.display = "none";
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 1280, height: 1280 } }).then(stream => {
-        video.srcObject = stream; video.setAttribute("playsinline", true); video.play();
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 1280, height: 1280 } }).then(s => {
+        video.srcObject = s; video.setAttribute("playsinline", true); video.play();
         requestAnimationFrame(tick);
     });
 }
 
 function tick() {
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvasElement.width = video.videoWidth;
-        canvasElement.height = video.videoHeight;
+        canvasElement.width = video.videoWidth; canvasElement.height = video.videoHeight;
         canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-
         if (document.getElementById('mgmt-modal').style.display === 'flex' && miniCanvasElement) {
             miniCanvasElement.width = 320; miniCanvasElement.height = 320;
             miniCanvas.drawImage(video, 0, 0, 320, 320);
         }
-
         const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
         const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
-
         if (code && code.data.trim() !== "") {
             if (code.data === lastSeenQR) { seenCount++; } else { lastSeenQR = code.data; seenCount = 1; }
-
             if (seenCount >= 2) {
                 currentQR = code.data;
                 if (!isProcessing && activeMaster && document.getElementById("mgmt-modal").style.display !== "flex") {
@@ -165,9 +164,7 @@ function tick() {
                     seenCount = 0; lastSeenQR = "";
                 }
             }
-        } else {
-            seenCount = 0; lastSeenQR = "";
-        }
+        } else { seenCount = 0; lastSeenQR = ""; }
     }
     requestAnimationFrame(tick);
 }
@@ -182,15 +179,9 @@ function updateStatus(ok) {
     }, 1200);
 }
 
-function saveLog(result) {
+function saveLog(res) {
     const now = new Date();
-    const entry = {
-        date: now.toLocaleDateString(),
-        time: now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"}),
-        master: activeMaster.name,
-        result: result
-    };
-    logs.push(entry);
+    logs.push({ time: now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"}), master: activeMaster.name, result: res, date: now.toLocaleDateString() });
     localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
     renderRecentLogs();
 }
@@ -198,115 +189,59 @@ function saveLog(result) {
 function selectMasterFromPullDown() {
     const val = document.getElementById("master-select").value;
     activeMaster = (val === "") ? null : masters[parseInt(val)];
-    document.getElementById("target-info").innerText = activeMaster ? `生産中：${activeMaster.name}` : "生産中：未選択";
+    document.getElementById("target-info").innerText = activeMaster ? activeMaster.name : "未選択";
 }
 
 function renderMasters() {
-    const sel = document.getElementById("master-select");
-    let options = '<option value="">-- マスターを選択 --</option>';
+    let options = '<option value="">-- 切り替えはこちら --</option>';
     options += masters.map((m, i) => `<option value="${i}" ${activeMaster && activeMaster.code === m.code ? "selected" : ""}>${m.name}</option>`).join("");
-    sel.innerHTML = options;
-    document.getElementById("master-count").innerText = `登録：${masters.length}件`;
+    document.getElementById("master-select").innerHTML = options;
 }
 
 function registerNew() {
     if (!currentQR) return alert("QRが認識されていません。");
     const name = prompt("製品名を入力:");
-    if (!name) return;
-    masters.push({name: name, code: currentQR});
-    saveMasters();
-}
-
-function editMaster(i) {
-    const name = prompt("新しい名称", masters[i].name);
-    if (name) { masters[i].name = name; saveMasters(); }
-}
-
-function deleteMaster(i) {
-    if (confirm("削除しますか？")) {
-        if (activeMaster && masters[i].code === activeMaster.code) activeMaster = null;
-        masters.splice(i, 1);
-        saveMasters();
-    }
+    if (name) { masters.push({name: name, code: currentQR}); saveMasters(); }
 }
 
 function saveMasters() {
     localStorage.setItem("kb_v19_masters", JSON.stringify(masters));
-    renderMasters();
-    renderEditList();
-    if (!activeMaster) document.getElementById("target-info").innerText = "生産中：未選択";
+    renderMasters(); renderEditList();
 }
 
 function renderEditList() {
     document.getElementById("edit-list").innerHTML = masters.map((m, i) => `
-        <div class="edit-card">
-            <b>${m.name}</b><br><small style="color:#666">CODE: ${m.code}</small><br>
-            <button onclick="editMaster(${i})" style="margin-top:5px; padding:6px 10px; border-radius:5px;">名前変更</button>
-            <button onclick="deleteMaster(${i})" style="color:red; margin-top:5px; padding:6px 10px; border-radius:5px; background:none; border:1px solid red;">削除</button>
-        </div>
+        <div style="border-bottom:1px solid #ddd; padding:10px;"><b>${m.name}</b> <button onclick="deleteMaster(${i})" style="color:red; background:none; border:none; float:right;">削除</button></div>
     `).join("");
 }
 
+function deleteMaster(i) { if (confirm("削除？")) { masters.splice(i,1); saveMasters(); } }
+
 function renderRecentLogs() {
-    const recent = logs.slice(-10).reverse();
+    const recent = logs.slice(-5).reverse();
     document.getElementById("recent-logs").innerHTML = recent.map(l => `
-        <div class="log-item">
-            <span><b style="color:${l.result==='OK'?'#28a745':'#dc3545'}">[${l.result}]</b> ${l.time}</span>
-            <span style="color:#666">${l.master}</span>
-        </div>
-    `).join("") || '<div style="color:#999; text-align:center; margin-top:20px;">履歴なし</div>';
+        <div class="log-item"><span><b style="color:${l.result==='OK'?'#28a745':'#dc3545'}">[${l.result}]</b> ${l.time}</span><span>${l.master}</span></div>
+    `).join("") || '<div style="color:#999; text-align:center; padding:20px;">履歴なし</div>';
 }
 
 function toggleModal(id) {
     const m = document.getElementById(id);
     m.style.display = (m.style.display === "flex") ? "none" : "flex";
-    if (id === "log-modal") renderFullLogs();
-}
-
-function renderFullLogs() {
-    const summary = {};
-    let okCount = 0;
-    logs.forEach(l => {
-        if (l.result === "OK") {
-            okCount++;
-            const k = `${l.date} [${l.master}]`;
-            summary[k] = (summary[k] || 0) + 1;
-        }
-    });
-    document.getElementById("summary-list").innerHTML = `<b>総OK：${okCount}件</b><hr>` + Object.entries(summary).reverse().map(([k, v]) => `<div>${k}: ${v}件</div>`).join("");
-    document.getElementById("full-log-list").innerHTML = logs.slice().reverse().map(l => `<div class="log-item"><span>[${l.result}] ${l.date} ${l.time}</span><span>${l.master}</span></div>`).join("");
-}
-
-function clearLogs() {
-    if (confirm("履歴をすべて消去しますか？")) { logs = []; localStorage.setItem("kb_v19_logs", "[]"); renderRecentLogs(); renderFullLogs(); }
-}
-
-function finishProduction() {
-    if(!activeMaster) return;
-    activeMaster = null;
-    document.getElementById("master-select").value = "";
-    document.getElementById("target-info").innerText = "生産中：未選択";
+    if (id === "log-modal") {
+        const okCount = logs.filter(l => l.result === "OK").length;
+        document.getElementById("summary-list").innerHTML = `<b>総OK：${okCount}件</b>`;
+        document.getElementById("full-log-list").innerHTML = logs.slice().reverse().map(l => `<div class="log-item"><span>[${l.result}] ${l.time}</span><span>${l.master}</span></div>`).join("");
+    }
 }
 
 function exportCSV() {
-    if (logs.length === 0) return alert("履歴がありません");
     let csv = "日付,時間,マスター名,結果\n";
     logs.forEach(l => { csv += `${l.date},${l.time},${l.master},${l.result}\n`; });
-    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-    const blob = new Blob([bom, csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `logs_${new Date().toISOString().slice(0,10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `logs.csv`; a.click();
 }
 
-renderMasters();
-renderEditList();
-renderRecentLogs();
+renderMasters(); renderEditList(); renderRecentLogs();
 </script>
 </body>
 </html>
