@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QR SCANNER PRO v18</title>
+    <title>QR SCANNER PRO v18 (内カメラ版)</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; text-align: center; margin: 0; transition: background-color 0.2s; min-height: 100vh; display: flex; flex-direction: column; background: #000; overflow: hidden; color: white; }
@@ -13,25 +16,21 @@
         header { background: #333; height: 5px; }
         #status-display { font-size: 5rem; font-weight: 900; margin: 10px 0; height: 1.2em; line-height: 1.2; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
         
-        /* メインプレビューエリア */
         .video-container { position: relative; width: 85%; max-width: 320px; margin: 0 auto; aspect-ratio: 1/1; border: 4px solid #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 0 25px rgba(0,0,0,0.6); background: #222; }
-        #canvas { width: 100%; height: 100%; object-fit: cover; }
+        #canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); } /* 内カメラ用に鏡像反転 */
         
-        /* 照準ガイド */
         .scan-guide { position: absolute; top: 50%; left: 50%; width: 65%; height: 65%; border: 2px dashed rgba(255,255,255,0.7); transform: translate(-50%, -50%); pointer-events: none; border-radius: 12px; box-sizing: border-box; }
         .scan-guide::after { content: "QRを枠内へ"; position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 0.8rem; color: #fff; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 4px; }
 
         .info-panel { margin: 15px 10px; padding: 15px; background: rgba(255,255,255,0.15); border-radius: 15px; backdrop-filter: blur(10px); }
         #target-info { font-size: 1.5rem; font-weight: bold; color: #fff; }
 
-        /* マスター表示リスト */
         .master-panel { background: #f4f7f9; color: #333; padding: 15px; border-radius: 25px 25px 0 0; flex-grow: 1; box-shadow: 0 -5px 20px rgba(0,0,0,0.4); overflow-y: auto; }
         .master-item { display: flex; justify-content: space-between; align-items: center; padding: 18px; margin-bottom: 12px; border: 2px solid #ccc; border-radius: 15px; cursor: pointer; background: white; }
         .master-item.active { border-color: #007bff; background: #eef6ff; outline: 3px solid #007bff; }
         .status-badge { font-size: 0.8rem; padding: 5px 12px; border-radius: 6px; background: #eee; font-weight: bold; }
         .active .status-badge { background: #007bff; color: white; }
 
-        /* 下部ボタン */
         .btn-group { padding: 12px; background: white; border-top: 1px solid #ddd; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         button { padding: 18px; border-radius: 12px; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; transition: opacity 0.2s; }
         button:active { opacity: 0.7; }
@@ -39,12 +38,11 @@
         .btn-sub { background: #555; color: white; }
         .btn-danger { background: #fff; color: #dc3545; border: 2px solid #dc3545; }
 
-        /* モーダル */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; color: #333; z-index: 500; text-align: left; flex-direction: column; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
         .modal-content { flex-grow: 1; overflow-y: auto; padding: 15px; }
         
-        #mini-canvas { width: 100%; max-width: 220px; border: 2px solid #000; border-radius: 8px; margin-top: 10px; }
+        #mini-canvas { width: 100%; max-width: 220px; border: 2px solid #000; border-radius: 8px; margin-top: 10px; transform: scaleX(-1); }
 
         #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; z-index: 2000; font-size: 1.8rem; font-weight: bold; cursor: pointer; }
     </style>
@@ -135,7 +133,7 @@
                 osc.start(); osc.stop(audioCtx.currentTime + 0.25);
             } else {
                 osc.type = 'sawtooth'; osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.4);
                 if (navigator.vibrate) navigator.vibrate(300);
             }
@@ -145,8 +143,9 @@
             document.getElementById("start-overlay").style.display = "none";
             if (audioCtx.state === 'suspended') audioCtx.resume();
             
+            // ★ここを内カメラ (facingMode: "user") に変更
             const constraints = { 
-                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
+                video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
             };
             
             navigator.mediaDevices.getUserMedia(constraints).then(s => {
@@ -157,12 +156,10 @@
 
         function tick() {
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                // 高解像度解析 (感度向上)
                 canvasElement.height = 640; 
                 canvasElement.width = 640 * (video.videoWidth / video.videoHeight);
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
                 
-                // 管理用ミニプレビューも更新
                 miniCanvasElement.height = 320;
                 miniCanvasElement.width = 320 * (video.videoWidth / video.videoHeight);
                 miniCanvas.drawImage(video, 0, 0, miniCanvasElement.width, miniCanvasElement.height);
@@ -175,7 +172,6 @@
                     const now = Date.now();
                     const isMgmtOpen = document.getElementById('mgmt-modal').style.display === "flex";
                     
-                    // 照合ロジック (管理画面が閉じていて、かつ判定中でない場合)
                     if (!isMgmtOpen && !isProcessing && (currentQR !== lastScanned || now - lastTime > 1500)) {
                         lastScanned = currentQR; lastTime = now;
                         if (activeMaster) {
@@ -196,7 +192,6 @@
             document.body.className = isOk ? "ok" : "ng";
             playSound(isOk ? 'ok' : 'ng');
             
-            // 判定表示時間を1.5秒に設定
             resetTimer = setTimeout(() => {
                 statusDisp.innerText = "READY";
                 document.body.className = "";
@@ -215,7 +210,6 @@
             localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
         }
 
-        /* --- マスター管理系関数 --- */
         function registerNew() {
             if (!currentQR) return alert("QRコードが認識されていません。枠内に合わせてください。");
             const name = prompt("製品名（マスター名）を入力:", "");
