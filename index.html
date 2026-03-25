@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QR SCANNER PRO v37</title>
+    <title>QR SCANNER PRO v38 - LOCK ENABLED</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --safe-area-bottom: env(safe-area-inset-bottom); }
@@ -23,21 +23,11 @@
         .info-label { font-size: 1.3rem; margin-bottom: 2px; font-weight: bold; color: #eee; }
         #target-info { font-size: 4.2rem; font-weight: 900; line-height: 1.0; word-break: break-all; color: #fff; text-shadow: 3px 3px 8px #000; }
 
-        /* ★マスター変更プルダウン（さらに巨大化） */
+        /* マスター変更プルダウン */
         .master-panel { background:#f4f7f9; color:#333; padding: 12px 15px 5px; border-radius: 20px 20px 0 0; margin-top: auto; }
-        #master-select { 
-            width: 100%; 
-            padding: 20px; 
-            font-size: 1.8rem; 
-            border-radius: 15px; 
-            border: 3px solid #007bff; 
-            font-weight: 900; 
-            background: #fff; 
-            text-align: center;
-            color: #007bff;
-        }
+        #master-select { width: 100%; padding: 20px; font-size: 1.8rem; border-radius: 15px; border: 3px solid #007bff; font-weight: 900; background: #fff; text-align: center; color: #007bff; }
 
-        /* ★ログエリア（3個表示用に高さを調整） */
+        /* ログエリア */
         .log-display-area { background: #fff; color: #333; height: 115px; overflow: hidden; padding: 0 20px; border-bottom: 1px solid #ddd; }
         .log-item { padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
 
@@ -47,6 +37,22 @@
         .btn-main { background:#007bff; color:white; }
         .btn-sub { background:#555; color:white; }
         
+        /* ★NGロック用オーバーレイ */
+        #lock-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(220, 53, 69, 0.98); 
+            display: none; flex-direction: column; justify-content: center; align-items: center; 
+            z-index: 10000; text-align: center; color: white;
+        }
+        #lock-overlay h1 { font-size: 6rem; margin: 0; font-weight: 900; }
+        #lock-overlay p { font-size: 1.5rem; margin-bottom: 30px; }
+        #pw-input { 
+            font-size: 3rem; width: 80%; max-width: 300px; padding: 15px; 
+            text-align: center; border-radius: 15px; border: none; margin-bottom: 20px;
+            -webkit-text-security: disc; /* パスワードを伏せ字に */
+        }
+        .btn-unlock { background: white; color: #dc3545; padding: 20px 50px; font-size: 1.5rem; border-radius: 15px; font-weight: 900; }
+
         #start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#111; display:flex; justify-content:center; align-items:center; z-index:9999; font-size:2rem; font-weight:bold; }
         .modal { position:fixed; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; background:#fff; z-index:5000; color:#333; }
         .modal-content { padding: 20px; flex-grow: 1; overflow-y: auto; }
@@ -54,6 +60,13 @@
     </style>
 </head>
 <body>
+    <div id="lock-overlay">
+        <h1>NG 発生</h1>
+        <p>確認が必要です。パスワードを入力してください。</p>
+        <input type="number" id="pw-input" placeholder="****" inputmode="numeric">
+        <button class="btn-unlock" onclick="unlock()">解除</button>
+    </div>
+
     <div id="start-overlay" onclick="startApp()">タップして開始</div>
     <div id="status-display">READY</div>
     <div class="video-container"><canvas id="canvas"></canvas></div>
@@ -65,7 +78,7 @@
 
     <div class="master-panel">
         <select id="master-select" onchange="selectMasterFromPullDown()">
-            <option value="" disabled selected>▼ マスター変更（選択して確定）</option>
+            <option value="" disabled selected>▼ マスター変更</option>
         </select>
     </div>
 
@@ -105,12 +118,16 @@
     </div>
 
 <script>
+// ★解除用パスワード設定
+const UNLOCK_PASSWORD = "1234";
+
 const video = document.createElement("video");
 const canvasElement = document.getElementById("canvas");
 const canvas = canvasElement.getContext("2d", { willReadFrequently: true });
 const miniCanvasElement = document.getElementById("mini-canvas");
 const miniCanvas = miniCanvasElement.getContext("2d");
 let audioCtx;
+let isLocked = false;
 
 function playBeep(type) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -126,15 +143,14 @@ function playBeep(type) {
         o2.frequency.setValueAtTime(880, now + 0.15); g.gain.setValueAtTime(0.3, now + 0.15);
         o2.connect(g); o2.start(now + 0.15); o2.stop(now + 0.6);
     } else {
-        // ★【ブッブー】（キレのある2音）
         [0, 0.22].forEach(delay => {
             [150, 180].forEach(f => {
                 const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
                 o.type='square'; o.frequency.setValueAtTime(f, now + delay);
                 g.gain.setValueAtTime(0.5, now + delay);
-                g.gain.linearRampToValueAtTime(0, now + delay + 0.18);
+                g.gain.linearRampToValueAtTime(0, now + delay + 0.25);
                 o.connect(g); g.connect(audioCtx.destination);
-                o.start(now + delay); o.stop(now + delay + 0.18);
+                o.start(now + delay); o.stop(now + delay + 0.25);
             });
         });
     }
@@ -168,7 +184,8 @@ function tick() {
         if (code && code.data.trim() !== "") {
             if (code.data === lastSeenQR) { seenCount++; } else { lastSeenQR = code.data; seenCount = 1; }
             if (seenCount >= 2) {
-                if (!isProcessing && activeMaster && document.getElementById("mgmt-modal").style.display !== "flex") {
+                // ロック中、または処理中、またはモーダル表示中はスキャンを停止
+                if (!isProcessing && !isLocked && activeMaster && document.getElementById("mgmt-modal").style.display !== "flex") {
                     isProcessing = true;
                     const ok = (code.data === activeMaster.code);
                     playBeep(ok ? "ok" : "ng");
@@ -183,9 +200,35 @@ function tick() {
 }
 
 function updateStatus(ok) {
-    document.body.className = ok ? "ok" : "ng";
-    document.getElementById("status-display").innerText = ok ? "OK" : "NG";
-    setTimeout(() => { document.body.className = ""; document.getElementById("status-display").innerText = "READY"; isProcessing = false; }, 1200);
+    if (ok) {
+        document.body.className = "ok";
+        document.getElementById("status-display").innerText = "OK";
+        setTimeout(() => { document.body.className = ""; document.getElementById("status-display").innerText = "READY"; isProcessing = false; }, 1200);
+    } else {
+        // ★NGの時はロックをかける
+        document.body.className = "ng";
+        document.getElementById("status-display").innerText = "NG";
+        isLocked = true;
+        setTimeout(() => {
+            document.getElementById("lock-overlay").style.display = "flex";
+            document.getElementById("pw-input").focus();
+        }, 500);
+    }
+}
+
+function unlock() {
+    const input = document.getElementById("pw-input").value;
+    if (input === UNLOCK_PASSWORD) {
+        isLocked = false;
+        isProcessing = false;
+        document.getElementById("lock-overlay").style.display = "none";
+        document.getElementById("pw-input").value = "";
+        document.body.className = "";
+        document.getElementById("status-display").innerText = "READY";
+    } else {
+        alert("パスワードが違います");
+        document.getElementById("pw-input").value = "";
+    }
 }
 
 function saveLog(res) {
@@ -239,7 +282,6 @@ function renderEditList() {
 function deleteMaster(i) { if (confirm("削除しますか？")) { masters.splice(i,1); saveMasters(); } }
 
 function renderRecentLogs() {
-    // ★最新3件を表示するように修正
     const recent = logs.slice(-3).reverse();
     document.getElementById("recent-logs").innerHTML = recent.map(l => `
         <div class="log-item"><span><b style="color:${l.result==='OK'?'#28a745':'#dc3545'}">[${l.result}]</b> ${l.time}</span><span>${l.master}</span></div>
@@ -247,6 +289,7 @@ function renderRecentLogs() {
 }
 
 function toggleModal(id) {
+    if (isLocked) return; // ロック中は設定画面などを開かせない
     const m = document.getElementById(id);
     m.style.display = (m.style.display === "flex") ? "none" : "flex";
     if (id === "log-modal") renderAnalysis();
@@ -273,6 +316,7 @@ function renderAnalysis() {
 function clearLogs() { if (confirm("履歴を削除しますか？")) { logs = []; localStorage.setItem("kb_v19_logs", "[]"); renderRecentLogs(); renderAnalysis(); } }
 
 function confirmFinish() {
+    if (isLocked) return;
     if (confirm("生産を終了しますか？")) {
         activeMaster = null;
         document.getElementById("target-info").innerText = "未選択";
