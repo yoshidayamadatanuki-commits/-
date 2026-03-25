@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QR SCANNER PRO v34</title>
+    <title>QR SCANNER PRO v35</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --safe-area-bottom: env(safe-area-inset-bottom); }
@@ -11,27 +11,20 @@
         body.ok { background:#28a745 !important; }
         body.ng { background:#dc3545 !important; }
 
-        /* 判定表示（特大） */
         #status-display { font-size: 8rem; font-weight: 900; height: 1.1em; text-shadow: 4px 4px 8px rgba(0,0,0,0.8); text-align: center; line-height: 1.1; flex-shrink: 0; }
-        
-        /* カメラプレビュー（さらに拡大） */
         .video-container { width: 95%; max-width: 400px; aspect-ratio: 1 / 1; border: 4px solid #fff; border-radius: 20px; overflow: hidden; margin: 0 auto; background: #222; flex-shrink: 0; }
         #canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         
-        /* 生産中の製品パネル */
         .info-panel { margin: 10px 12px; padding: 15px; background: rgba(255,255,255,0.25); border-radius: 15px; border: 3px solid #fff; text-align: center; flex-shrink: 0; }
         .info-label { font-size: 1.1rem; margin-bottom: 5px; font-weight: bold; color: #eee; }
         #target-info { font-size: 3.2rem; font-weight: 900; line-height: 1.1; word-break: break-all; color: #fff; text-shadow: 2px 2px 5px #000; }
 
-        /* マスター変更プルダウン */
         .master-panel { background:#f4f7f9; color:#333; padding: 10px 15px; border-radius: 20px 20px 0 0; margin-top: auto; }
         #master-select { width: 100%; padding: 15px; font-size: 1.3rem; border-radius: 12px; border: 2px solid #ccc; font-weight: bold; background: #fff; text-align: center; }
 
-        /* ログエリア */
         .log-display-area { background: #fff; color: #333; height: 90px; overflow: hidden; padding: 0 20px; }
         .log-item { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
 
-        /* ボタン群（余白なし） */
         .btn-group { background:#fff; padding: 10px 12px calc(5px + var(--safe-area-bottom)); display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; border-top: 1px solid #ddd; }
         button { padding: 20px 5px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; font-size: 1.1rem; }
         .btn-main { background:#007bff; color:white; }
@@ -64,7 +57,7 @@
     <div class="btn-group">
         <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ 設定</button>
         <button class="btn-sub" onclick="toggleModal('log-modal')">📊 集計</button>
-        <button class="btn-sub" onclick="finishProduction()" style="background:#b40000;">■ 終了</button>
+        <button class="btn-sub" onclick="confirmFinish()" style="background:#b40000;">■ 終了</button>
     </div>
 
     <div id="mgmt-modal" class="modal">
@@ -116,7 +109,6 @@ function playBeep(type) {
         o2.frequency.setValueAtTime(880, now + 0.15); g.gain.setValueAtTime(0.3, now + 0.15);
         o2.connect(g); o2.start(now + 0.15); o2.stop(now + 0.6);
     } else {
-        // 【ブッブー】（2音に分断）
         [0, 0.25].forEach(delay => {
             [140, 175].forEach(f => {
                 const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
@@ -146,19 +138,14 @@ function startApp() {
 
 function tick() {
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        // メインキャンバス描画
         canvasElement.width = video.videoWidth; canvasElement.height = video.videoHeight;
         canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-        
-        // 設定画面用ミニキャンバス描画（修正点：常に描画を試みる）
         if (document.getElementById('mgmt-modal').style.display === 'flex') {
             miniCanvasElement.width = 400; miniCanvasElement.height = 400;
             miniCanvas.drawImage(video, 0, 0, 400, 400);
         }
-
         const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
         const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
-        
         if (code && code.data.trim() !== "") {
             if (code.data === lastSeenQR) { seenCount++; } else { lastSeenQR = code.data; seenCount = 1; }
             if (seenCount >= 2) {
@@ -189,12 +176,16 @@ function saveLog(res) {
     renderRecentLogs();
 }
 
+// ★マスター変更時の確認機能を追加
 function selectMasterFromPullDown() {
     const sel = document.getElementById("master-select");
     const val = sel.value;
     if (val !== "") {
-        activeMaster = masters[parseInt(val)];
-        document.getElementById("target-info").innerText = activeMaster.name;
+        const targetName = masters[parseInt(val)].name;
+        if (confirm(`生産製品を「${targetName}」に変更しますか？`)) {
+            activeMaster = masters[parseInt(val)];
+            document.getElementById("target-info").innerText = activeMaster.name;
+        }
     }
     sel.selectedIndex = 0;
 }
@@ -227,7 +218,7 @@ function renderEditList() {
     `).join("");
 }
 
-function deleteMaster(i) { if (confirm("削除しますか？")) { masters.splice(i,1); saveMasters(); } }
+function deleteMaster(i) { if (confirm("このマスターを削除しますか？")) { masters.splice(i,1); saveMasters(); } }
 
 function renderRecentLogs() {
     const recent = logs.slice(-2).reverse();
@@ -260,9 +251,15 @@ function renderAnalysis() {
     document.getElementById("full-log-list").innerHTML = logs.slice(-30).reverse().map(l => `<div style="padding:8px; border-bottom:1px solid #eee; font-size:0.9rem;">[${l.result}] ${l.date} ${l.time} - ${l.master}</div>`).join("");
 }
 
-function clearLogs() { if (confirm("履歴を削除しますか？")) { logs = []; localStorage.setItem("kb_v19_logs", "[]"); renderRecentLogs(); renderAnalysis(); } }
+function clearLogs() { if (confirm("履歴をすべて削除しますか？")) { logs = []; localStorage.setItem("kb_v19_logs", "[]"); renderRecentLogs(); renderAnalysis(); } }
 
-function finishProduction() { activeMaster = null; document.getElementById("target-info").innerText = "未選択"; }
+// ★終了ボタンにも確認を追加
+function confirmFinish() {
+    if (confirm("生産を終了し、マスター選択を解除しますか？")) {
+        activeMaster = null;
+        document.getElementById("target-info").innerText = "未選択";
+    }
+}
 
 function exportCSV() {
     let csv = "日付,時間,マスター名,結果\n";
