@@ -3,182 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QR SCANNER PRO v18 (内カメラ版)</title>
+    <title>QR SCANNER PRO v18 (高画質・内カメラ版)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
-        body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; text-align: center; margin: 0; transition: background-color 0.2s; min-height: 100vh; display: flex; flex-direction: column; background: #000; overflow: hidden; color: white; }
+        body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; text-align: center; margin: 0; background: #000; overflow: hidden; color: white; min-height: 100vh; display: flex; flex-direction: column; }
         body.ok { background-color: #28a745 !important; }
         body.ng { background-color: #dc3545 !important; }
-
-        header { background: #333; height: 5px; }
         #status-display { font-size: 5rem; font-weight: 900; margin: 10px 0; height: 1.2em; line-height: 1.2; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        
-        .video-container { position: relative; width: 85%; max-width: 320px; margin: 0 auto; aspect-ratio: 1/1; border: 4px solid #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 0 25px rgba(0,0,0,0.6); background: #222; }
-        #canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); } /* 内カメラ用に鏡像反転 */
-        
-        .scan-guide { position: absolute; top: 50%; left: 50%; width: 65%; height: 65%; border: 2px dashed rgba(255,255,255,0.7); transform: translate(-50%, -50%); pointer-events: none; border-radius: 12px; box-sizing: border-box; }
-        .scan-guide::after { content: "QRを枠内へ"; position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 0.8rem; color: #fff; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 4px; }
-
+        .video-container { position: relative; width: 85%; max-width: 320px; margin: 0 auto; aspect-ratio: 1/1; border: 4px solid #fff; border-radius: 20px; overflow: hidden; background: #222; }
+        #canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .scan-guide { position: absolute; top: 50%; left: 50%; width: 65%; height: 65%; border: 2px dashed rgba(255,255,255,0.7); transform: translate(-50%, -50%); pointer-events: none; border-radius: 12px; }
         .info-panel { margin: 15px 10px; padding: 15px; background: rgba(255,255,255,0.15); border-radius: 15px; backdrop-filter: blur(10px); }
-        #target-info { font-size: 1.5rem; font-weight: bold; color: #fff; }
-
-        .master-panel { background: #f4f7f9; color: #333; padding: 15px; border-radius: 25px 25px 0 0; flex-grow: 1; box-shadow: 0 -5px 20px rgba(0,0,0,0.4); overflow-y: auto; }
-        .master-item { display: flex; justify-content: space-between; align-items: center; padding: 18px; margin-bottom: 12px; border: 2px solid #ccc; border-radius: 15px; cursor: pointer; background: white; }
+        #target-info { font-size: 1.5rem; font-weight: bold; }
+        .master-panel { background: #f4f7f9; color: #333; padding: 15px; border-radius: 25px 25px 0 0; flex-grow: 1; overflow-y: auto; }
+        .master-item { display: flex; justify-content: space-between; align-items: center; padding: 18px; margin-bottom: 12px; border: 2px solid #ccc; border-radius: 15px; background: white; }
         .master-item.active { border-color: #007bff; background: #eef6ff; outline: 3px solid #007bff; }
-        .status-badge { font-size: 0.8rem; padding: 5px 12px; border-radius: 6px; background: #eee; font-weight: bold; }
-        .active .status-badge { background: #007bff; color: white; }
-
-        .btn-group { padding: 12px; background: white; border-top: 1px solid #ddd; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { padding: 18px; border-radius: 12px; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; transition: opacity 0.2s; }
-        button:active { opacity: 0.7; }
+        .btn-group { padding: 12px; background: white; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { padding: 18px; border-radius: 12px; border: none; font-weight: bold; font-size: 1rem; }
         .btn-main { background: #007bff; color: white; }
         .btn-sub { background: #555; color: white; }
-        .btn-danger { background: #fff; color: #dc3545; border: 2px solid #dc3545; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; color: #333; z-index: 500; text-align: left; flex-direction: column; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
-        .modal-content { flex-grow: 1; overflow-y: auto; padding: 15px; }
-        
-        #mini-canvas { width: 100%; max-width: 220px; border: 2px solid #000; border-radius: 8px; margin-top: 10px; transform: scaleX(-1); }
-
-        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; z-index: 2000; font-size: 1.8rem; font-weight: bold; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; color: #333; z-index: 500; flex-direction: column; }
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; z-index: 2000; font-size: 1.8rem; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div id="start-overlay" onclick="startApp()">タップしてスキャン開始</div>
-
-    <header></header>
     <div id="status-display">READY</div>
-    
     <div class="video-container">
         <canvas id="canvas"></canvas>
         <div class="scan-guide"></div>
     </div>
-    
-    <div class="info-panel">
-        <div id="target-info">生産中：マスター未選択</div>
-    </div>
-
-    <div class="master-panel">
-        <div id="master-container"></div>
-    </div>
-
+    <div class="info-panel"><div id="target-info">生産中：マスター未選択</div></div>
+    <div class="master-panel"><div id="master-container"></div></div>
     <div class="btn-group">
         <button class="btn-main" style="grid-column: span 2;" onclick="toggleModal('mgmt-modal')">⚙ 設定 / 登録</button>
-        <button class="btn-sub" style="grid-column: span 2;" onclick="toggleModal('log-modal')">📊 判定履歴を確認</button>
     </div>
 
     <div id="mgmt-modal" class="modal">
-        <div class="modal-header"><h3>マスター設定</h3><button onclick="toggleModal('mgmt-modal')" style="font-size:1.5rem; background:none; border:none; color:#999;">✕</button></div>
-        <div class="modal-content">
-            <button class="btn-main" style="width:100%; margin-bottom:12px;" onclick="registerNew()">＋ 今映っているQRを登録</button>
-            <button class="btn-sub" style="width:100%; margin-bottom:20px; background:#444;" onclick="registerByText()">⌨ 文字入力で新規登録</button>
-            
+        <div style="padding:20px;">
+            <h3>マスター設定</h3>
+            <button class="btn-main" style="width:100%; margin-bottom:12px;" onclick="registerNew()">＋ QRを登録</button>
             <div id="edit-list"></div>
-
-            <div style="text-align: center; background: #eee; padding: 15px; border-radius: 12px; margin-top: 15px;">
-                <div style="font-size: 0.8rem; margin-bottom:8px; font-weight:bold;">カメラプレビュー</div>
-                <canvas id="mini-canvas"></canvas>
-            </div>
+            <button class="btn-sub" style="width:100%; margin-top:20px;" onclick="toggleModal('mgmt-modal')">閉じる</button>
         </div>
-        <div style="padding:15px;"><button class="btn-sub" style="width:100%;" onclick="toggleModal('mgmt-modal')">閉じる</button></div>
-    </div>
-
-    <div id="log-modal" class="modal">
-        <div class="modal-header"><h3>判定履歴</h3><button onclick="toggleModal('log-modal')" style="font-size:1.5rem; background:none; border:none; color:#999;">✕</button></div>
-        <div class="modal-content">
-            <div id="summary-area" style="background:#eef6ff; padding:15px; border-radius:12px; margin-bottom:20px; border-left:5px solid #007bff;">
-                <b style="color:#007bff;">【日別OK集計】</b><div id="summary-list" style="margin-top:8px; font-weight:bold;"></div>
-            </div>
-            <div id="log-list"></div>
-        </div>
-        <div style="padding:15px;"><button class="btn-danger" style="width:100%;" onclick="clearLogs()">履歴データをリセット</button></div>
     </div>
 
     <script>
         const video = document.createElement("video");
         const canvasElement = document.getElementById("canvas");
-        const canvas = canvasElement.getContext("2d", { alpha: false });
-        const miniCanvasElement = document.getElementById("mini-canvas");
-        const miniCanvas = miniCanvasElement.getContext("2d");
-        
-        const statusDisp = document.getElementById("status-display");
-        const targetInfoLabel = document.getElementById("target-info");
-        const mContainer = document.getElementById("master-container");
-        const editList = document.getElementById("edit-list");
-
+        const canvas = canvasElement.getContext("2d", { alpha: false, willReadFrequently: true });
         let currentQR = ""; 
-        let activeMaster = null; 
+        let activeMaster = null;
         let masters = JSON.parse(localStorage.getItem("kb_v19_masters")) || [];
-        let logs = JSON.parse(localStorage.getItem("kb_v19_logs")) || [];
-        
-        let lastScanned = ""; 
-        let lastTime = 0; 
-        let isProcessing = false; 
-        let resetTimer = null;
-
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(type) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            if (type === 'ok') {
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-                osc.frequency.setValueAtTime(1046, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
-            } else {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-                gain.gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-                if (navigator.vibrate) navigator.vibrate(300);
-            }
-        }
+        let isProcessing = false;
 
         function startApp() {
             document.getElementById("start-overlay").style.display = "none";
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            // ★ここを内カメラ (facingMode: "user") に変更
+            // 解像度を1280x720以上に指定（スマホの性能に合わせる）
             const constraints = { 
-                video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
+                video: { 
+                    facingMode: "user", 
+                    width: { ideal: 1920 }, 
+                    height: { ideal: 1080 } 
+                } 
             };
-            
             navigator.mediaDevices.getUserMedia(constraints).then(s => {
-                video.srcObject = s; video.setAttribute("playsinline", true); video.play();
+                video.srcObject = s;
+                video.setAttribute("playsinline", true);
+                video.play();
                 requestAnimationFrame(tick);
-            }).catch(e => alert("カメラの起動に失敗しました: " + e));
+            });
         }
 
         function tick() {
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvasElement.height = 640; 
-                canvasElement.width = 640 * (video.videoWidth / video.videoHeight);
+                // キャンバス自体の解像度を高く保つ
+                canvasElement.height = video.videoHeight;
+                canvasElement.width = video.videoWidth;
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-                
-                miniCanvasElement.height = 320;
-                miniCanvasElement.width = 320 * (video.videoWidth / video.videoHeight);
-                miniCanvas.drawImage(video, 0, 0, miniCanvasElement.width, miniCanvasElement.height);
 
                 const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-                const code = jsQR(imageData.data, canvasElement.width, canvasElement.height, { inversionAttempts: "dontInvert" });
+                const code = jsQR(imageData.data, canvasElement.width, canvasElement.height, {
+                    inversionAttempts: "dontInvert",
+                });
 
                 if (code) {
                     currentQR = code.data;
-                    const now = Date.now();
-                    const isMgmtOpen = document.getElementById('mgmt-modal').style.display === "flex";
-                    
-                    if (!isMgmtOpen && !isProcessing && (currentQR !== lastScanned || now - lastTime > 1500)) {
-                        lastScanned = currentQR; lastTime = now;
-                        if (activeMaster) {
-                            const isOk = (currentQR === activeMaster.code);
-                            updateStatus(isOk);
-                            saveLog(isOk ? "OK" : "NG");
-                        }
+                    if (!isProcessing && activeMaster) {
+                        isProcessing = true;
+                        const isOk = (currentQR === activeMaster.code);
+                        updateStatus(isOk);
                     }
                 }
             }
@@ -186,137 +103,43 @@
         }
 
         function updateStatus(isOk) {
-            if (resetTimer) clearTimeout(resetTimer);
-            isProcessing = true;
-            statusDisp.innerText = isOk ? "OK" : "NG";
+            document.getElementById("status-display").innerText = isOk ? "OK" : "NG";
             document.body.className = isOk ? "ok" : "ng";
-            playSound(isOk ? 'ok' : 'ng');
-            
-            resetTimer = setTimeout(() => {
-                statusDisp.innerText = "READY";
+            setTimeout(() => {
+                document.getElementById("status-display").innerText = "READY";
                 document.body.className = "";
                 isProcessing = false;
             }, 1500);
         }
 
-        function saveLog(res) {
-            const now = new Date();
-            logs.push({ 
-                date: now.toLocaleDateString(), 
-                time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}), 
-                master: activeMaster.name, 
-                result: res 
-            });
-            localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
-        }
-
         function registerNew() {
-            if (!currentQR) return alert("QRコードが認識されていません。枠内に合わせてください。");
-            const name = prompt("製品名（マスター名）を入力:", "");
-            if (name) { 
-                masters.push({ name: name, code: currentQR }); 
-                saveMasters();
-                alert(`「${name}」を登録しました。`);
-            }
-        }
-
-        function registerByText() {
-            const name = prompt("製品名を入力:", "");
-            if (!name) return;
-            const code = prompt(`「${name}」に対応するQRの文字列を入力:`, "");
-            if (code) { 
-                masters.push({ name: name, code: code }); 
-                saveMasters(); 
-            }
-        }
-
-        function editMaster(index) {
-            const cur = masters[index];
-            const n = prompt("製品名を編集:", cur.name); if (n === null) return;
-            const c = prompt("照合文字列を編集:", cur.code); if (c === null) return;
-            masters[index] = { name: n, code: c };
-            if (activeMaster && activeMaster.name === cur.name) {
-                activeMaster = masters[index]; 
-                targetInfoLabel.innerText = `生産中：${activeMaster.name}`;
-            }
-            saveMasters();
-        }
-
-        function deleteMaster(index) {
-            if (confirm(`「${masters[index].name}」を削除してもよろしいですか？`)) {
-                if (activeMaster && masters[index].code === activeMaster.code) {
-                    activeMaster = null; targetInfoLabel.innerText = "生産中：未選択";
-                }
-                masters.splice(index, 1); saveMasters();
-            }
+            if (!currentQR) return alert("QRが認識されていません");
+            const name = prompt("製品名:", "");
+            if (name) { masters.push({ name: name, code: currentQR }); saveMasters(); }
         }
 
         function saveMasters() {
             localStorage.setItem("kb_v19_masters", JSON.stringify(masters));
-            renderMasters(); renderEditList();
-        }
-
-        function confirmSwitch(index) {
-            if (confirm(`「${masters[index].name}」の照合を開始しますか？`)) {
-                activeMaster = masters[index]; 
-                targetInfoLabel.innerText = `生産中：${activeMaster.name}`;
-                renderMasters();
-            }
+            renderMasters();
         }
 
         function renderMasters() {
-            mContainer.innerHTML = masters.map((m, i) => {
-                const isActive = activeMaster && m.name === activeMaster.name;
-                return `<div class="master-item ${isActive ? 'active' : ''}" onclick="confirmSwitch(${i})">
-                    <b style="font-size:1.2rem;">${m.name}</b><span class="status-badge">${isActive ? '生産中' : '選択する'}</span>
-                </div>`;
-            }).join('');
-        }
-
-        function renderEditList() {
-            editList.innerHTML = masters.map((m, i) => `
-                <div style="border:1px solid #ddd; padding:15px; margin-bottom:12px; border-radius:12px; background:white; text-align:left;">
-                    <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px;">${m.name}</div>
-                    <div style="color:#666; font-size:0.8rem; word-break:break-all; margin-bottom:10px;">照合コード: ${m.code}</div>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn-sub" style="flex:1; padding:10px; font-size:0.9rem;" onclick="editMaster(${i})">編集</button>
-                        <button class="btn-danger" style="flex:1; padding:10px; font-size:0.9rem;" onclick="deleteMaster(${i})">削除</button>
-                    </div>
+            document.getElementById("master-container").innerHTML = masters.map((m, i) => `
+                <div class="master-item ${activeMaster && m.name===activeMaster.name?'active':''}" onclick="selectMaster(${i})">
+                    <b>${m.name}</b>
                 </div>
             `).join('');
+        }
+
+        function selectMaster(i) {
+            activeMaster = masters[i];
+            document.getElementById("target-info").innerText = `生産中：${activeMaster.name}`;
+            renderMasters();
         }
 
         function toggleModal(id) {
             const m = document.getElementById(id);
-            const isVisible = m.style.display === "flex";
-            m.style.display = isVisible ? "none" : "flex";
-            if (!isVisible) {
-                if (id === 'log-modal') renderLogs();
-                if (id === 'mgmt-modal') renderEditList();
-            }
-        }
-
-        function renderLogs() {
-            const summaryMap = {};
-            logs.forEach(l => { 
-                if (l.result === "OK") { 
-                    const key = `${l.date} - ${l.master}`; 
-                    summaryMap[key] = (summaryMap[key] || 0) + 1; 
-                } 
-            });
-            document.getElementById("summary-list").innerHTML = Object.entries(summaryMap).reverse().map(([k, c]) => `<div>${k}： ${c} 件</div>`).join('') || "記録なし";
-            document.getElementById("log-list").innerHTML = logs.slice().reverse().map(l => `
-                <div style="padding:12px; border-bottom:1px solid #eee; font-size:0.85rem; text-align:left;">
-                    <b style="color:${l.result==='OK'?'#28a745':'#dc3545'}; font-size:1rem;">[${l.result}]</b> ${l.date} ${l.time}<br>
-                    <span style="color:#666;">品名: ${l.master}</span>
-                </div>
-            `).join('');
-        }
-
-        function clearLogs() { 
-            if (confirm("これまでの判定履歴をすべて消去します。よろしいですか？")) { 
-                logs = []; localStorage.setItem("kb_v19_logs", JSON.stringify(logs)); renderLogs(); 
-            } 
+            m.style.display = m.style.display === "flex" ? "none" : "flex";
         }
 
         renderMasters();
