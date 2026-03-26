@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QR SCANNER PRO v38 - FULL OPTION</title>
+    <title>QR SCANNER PRO v39 - HIGH PRECISION</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --safe-area-bottom: env(safe-area-inset-bottom); }
@@ -21,7 +21,7 @@
         /* カメラプレビュー */
         .video-container { position: relative; width: 85%; max-width: 380px; aspect-ratio: 1 / 1; border: 5px solid #fff; border-radius: 20px; overflow: hidden; margin: 0 auto 5px; background: #222; flex-shrink: 0; }
         #canvas { width: 100%; height: 100%; object-fit: cover; }
-        .mirror { transform: scaleX(-1); } /* 内カメラ用反転スタイル */
+        .mirror { transform: scaleX(-1); }
 
         /* カメラ切り替えボタン */
         #camera-switch { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: 2px solid #fff; border-radius: 50%; width: 50px; height: 50px; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; z-index: 10; cursor: pointer; }
@@ -54,11 +54,7 @@
         }
         #lock-overlay h1 { font-size: 6rem; margin: 0; font-weight: 900; }
         #lock-overlay p { font-size: 1.5rem; margin-bottom: 30px; }
-        #pw-input { 
-            font-size: 3rem; width: 80%; max-width: 300px; padding: 15px; 
-            text-align: center; border-radius: 15px; border: none; margin-bottom: 20px;
-            -webkit-text-security: disc;
-        }
+        #pw-input { font-size: 3rem; width: 80%; max-width: 300px; padding: 15px; text-align: center; border-radius: 15px; border: none; margin-bottom: 20px; -webkit-text-security: disc; }
         .btn-unlock { background: white; color: #dc3545; padding: 20px 50px; font-size: 1.5rem; border-radius: 15px; font-weight: 900; }
 
         #start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#111; display:flex; justify-content:center; align-items:center; z-index:9999; font-size:2rem; font-weight:bold; color:white; }
@@ -76,7 +72,6 @@
     </div>
 
     <div id="start-overlay" onclick="startApp()">タップして開始</div>
-    
     <div id="status-display">READY</div>
     <div id="count-display">読み取り数: 0 枚</div>
     
@@ -143,8 +138,15 @@ const miniCanvas = miniCanvasElement.getContext("2d");
 let audioCtx;
 let isLocked = false;
 let isInterval = false;
-let currentFacingMode = "user"; // "user" または "environment"
-let okCount = 0; // 現在の読み取り枚数
+let currentFacingMode = "user"; 
+let okCount = 0; 
+let lastSeenQR = "";
+let seenCount = 0;
+let isProcessing = false;
+
+let masters = JSON.parse(localStorage.getItem("kb_v19_masters")) || [];
+let logs = JSON.parse(localStorage.getItem("kb_v19_logs")) || [];
+let activeMaster = null;
 
 function playBeep(type) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -172,40 +174,34 @@ function playBeep(type) {
     }
 }
 
-let masters = JSON.parse(localStorage.getItem("kb_v19_masters")) || [];
-let logs = JSON.parse(localStorage.getItem("kb_v19_logs")) || [];
-let activeMaster = null;
-let isProcessing = false;
-let lastSeenQR = "";
-let seenCount = 0;
-
 async function startApp() {
     document.getElementById("start-overlay").style.display = "none";
     await initCamera();
 }
 
 async function initCamera() {
-    if (video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-    }
-    const constraints = { video: { facingMode: currentFacingMode, width: 1280, height: 1280 } };
+    if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); }
+    const constraints = { 
+        video: { 
+            facingMode: currentFacingMode, 
+            width: { ideal: 1280 }, 
+            height: { ideal: 1280 }
+        } 
+    };
     try {
         const s = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = s;
-        video.setAttribute("playsinline", true);
-        video.play();
+        video.srcObject = s; video.setAttribute("playsinline", true); video.play();
         
-        // 内カメラ(user)のときだけ反転表示
-        if (currentFacingMode === "user") {
-            canvasElement.classList.add("mirror");
-        } else {
-            canvasElement.classList.remove("mirror");
+        // 反射対策：ズーム設定（対応デバイスのみ）
+        const track = s.getVideoTracks()[0];
+        if (track.getCapabilities && track.getCapabilities().zoom) {
+            track.applyConstraints({ advanced: [{ zoom: 1.2 }] }).catch(e => console.log(e));
         }
-        
+
+        if (currentFacingMode === "user") { canvasElement.classList.add("mirror"); } 
+        else { canvasElement.classList.remove("mirror"); }
         requestAnimationFrame(tick);
-    } catch (err) {
-        alert("カメラの起動に失敗しました: " + err);
-    }
+    } catch (err) { alert("カメラ起動失敗: " + err); }
 }
 
 function switchCamera() {
@@ -217,84 +213,79 @@ function tick() {
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvasElement.width = video.videoWidth; canvasElement.height = video.videoHeight;
         canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+        
         if (document.getElementById('mgmt-modal').style.display === 'flex') {
             miniCanvasElement.width = 400; miniCanvasElement.height = 400;
             miniCanvas.drawImage(video, 0, 0, 400, 400);
         }
-        const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-        const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
-        
-        if (code && code.data.trim() !== "") {
-            if (code.data === lastSeenQR) { seenCount++; } else { lastSeenQR = code.data; seenCount = 1; }
-            if (seenCount >= 2) {
-                if (!isProcessing && !isLocked && !isInterval && activeMaster && document.getElementById("mgmt-modal").style.display !== "flex") {
-                    isProcessing = true;
-                    const ok = (code.data === activeMaster.code);
-                    playBeep(ok ? "ok" : "ng");
-                    updateStatus(ok);
-                    saveLog(ok ? "OK" : "NG");
-                    seenCount = 0; lastSeenQR = "";
+
+        if (!isProcessing && !isLocked && !isInterval && activeMaster && document.getElementById("mgmt-modal").style.display !== "flex") {
+            const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+
+            if (code && code.data.trim() !== "") {
+                // 【空読み防止】QRのサイズチェック（小さすぎる＝ノイズを無視）
+                const qrWidth = Math.abs(code.location.topRightCorner.x - code.location.topLeftCorner.x);
+                if (qrWidth > 80) { 
+                    // 【高速2回判定】一瞬の誤読を防ぐため、2回連続で同じ値かチェック
+                    if (code.data === lastSeenQR) {
+                        seenCount++;
+                    } else {
+                        lastSeenQR = code.data;
+                        seenCount = 1;
+                    }
+
+                    if (seenCount >= 2) {
+                        isProcessing = true;
+                        const ok = (code.data === activeMaster.code);
+                        playBeep(ok ? "ok" : "ng");
+                        updateStatus(ok);
+                        saveLog(ok ? "OK" : "NG");
+                        seenCount = 0; lastSeenQR = "";
+                    }
                 }
+            } else {
+                seenCount = 0; lastSeenQR = "";
             }
-        } else { seenCount = 0; lastSeenQR = ""; }
+        }
     }
     requestAnimationFrame(tick);
 }
 
 function updateStatus(ok) {
     if (ok) {
-        okCount++;
-        updateCountDisplay();
-        document.body.className = "ok";
-        document.getElementById("status-display").innerText = "OK";
-        
+        okCount++; updateCountDisplay();
+        document.body.className = "ok"; document.getElementById("status-display").innerText = "OK";
         setTimeout(() => {
-            isInterval = true;
-            isProcessing = false;
-            document.body.className = "wait";
-            document.getElementById("status-display").innerText = "WAIT";
-            
-            setTimeout(() => {
-                isInterval = false;
-                document.body.className = "";
-                document.getElementById("status-display").innerText = "READY";
+            isInterval = true; isProcessing = false;
+            document.body.className = "wait"; document.getElementById("status-display").innerText = "WAIT";
+            setTimeout(() => { 
+                isInterval = false; 
+                document.body.className = ""; 
+                document.getElementById("status-display").innerText = "READY"; 
             }, SCAN_INTERVAL_MS);
-            
-        }, 1200);
-
+        }, 1000); // 1秒間だけOK表示
     } else {
-        document.body.className = "ng";
-        document.getElementById("status-display").innerText = "NG";
+        document.body.className = "ng"; document.getElementById("status-display").innerText = "NG";
         isLocked = true;
-        setTimeout(() => {
-            document.getElementById("lock-overlay").style.display = "flex";
-            document.getElementById("pw-input").focus();
+        setTimeout(() => { 
+            document.getElementById("lock-overlay").style.display = "flex"; 
+            document.getElementById("pw-input").focus(); 
         }, 500);
     }
 }
 
-function updateCountDisplay() {
-    document.getElementById("count-display").innerText = `読み取り数: ${okCount} 枚`;
-}
-
-function resetCount() {
-    okCount = 0;
-    updateCountDisplay();
-}
+function updateCountDisplay() { document.getElementById("count-display").innerText = `読み取り数: ${okCount} 枚`; }
+function resetCount() { okCount = 0; updateCountDisplay(); }
 
 function unlock() {
     const input = document.getElementById("pw-input").value;
     if (input === UNLOCK_PASSWORD) {
-        isLocked = false;
-        isProcessing = false;
+        isLocked = false; isProcessing = false;
         document.getElementById("lock-overlay").style.display = "none";
         document.getElementById("pw-input").value = "";
-        document.body.className = "";
-        document.getElementById("status-display").innerText = "READY";
-    } else {
-        alert("パスワードが違います");
-        document.getElementById("pw-input").value = "";
-    }
+        document.body.className = ""; document.getElementById("status-display").innerText = "READY";
+    } else { alert("パスワードが違います"); document.getElementById("pw-input").value = ""; }
 }
 
 function saveLog(res) {
@@ -312,10 +303,9 @@ function selectMasterFromPullDown() {
         if (confirm(`照合対象を「${targetName}」に変更しますか？\n（読み取り枚数もリセットされます）`)) {
             activeMaster = masters[parseInt(val)];
             document.getElementById("target-info").innerText = activeMaster.name;
-            isInterval = false;
-            document.body.className = "";
-            document.getElementById("status-display").innerText = "READY";
-            resetCount(); // 枚数リセット
+            isInterval = false; isProcessing = false;
+            document.body.className = ""; document.getElementById("status-display").innerText = "READY";
+            resetCount();
         }
     }
     sel.selectedIndex = 0;
@@ -335,10 +325,7 @@ function registerNew() {
     if (name) { masters.push({name: name, code: code.data}); saveMasters(); }
 }
 
-function saveMasters() {
-    localStorage.setItem("kb_v19_masters", JSON.stringify(masters));
-    renderMasters(); renderEditList();
-}
+function saveMasters() { localStorage.setItem("kb_v19_masters", JSON.stringify(masters)); renderMasters(); renderEditList(); }
 
 function renderEditList() {
     document.getElementById("edit-list").innerHTML = masters.map((m, i) => `
@@ -388,12 +375,10 @@ function clearLogs() { if (confirm("履歴を削除しますか？")) { logs = [
 function confirmFinish() {
     if (isLocked) return;
     if (confirm("生産を終了しますか？\n（読み取り枚数もリセットされます）")) {
-        activeMaster = null;
-        isInterval = false;
+        activeMaster = null; isInterval = false; isProcessing = false;
         document.getElementById("target-info").innerText = "未選択";
-        document.body.className = "";
-        document.getElementById("status-display").innerText = "READY";
-        resetCount(); // 枚数リセット
+        document.body.className = ""; document.getElementById("status-display").innerText = "READY";
+        resetCount();
     }
 }
 
