@@ -1,243 +1,239 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QR SCANNER PRO v38 - FULL OPTION (Speed Optimized)</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>QR SCANNER PRO v38 - FULL OPTION (Speed Optimized)</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
-    <style>
-        :root { --primary: #007aff; --success: #34c759; --danger: #ff3b30; --bg: #f2f2f7; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); color: #1c1c1e; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-        .safe-area-top { height: env(safe-area-inset-top); background: #000; }
-        
-        /* プレビューエリアの最適化 */
-        #preview-container { position: relative; width: 100%; height: 50vh; background: #000; overflow: hidden; }
-        #preview-canvas { width: 100%; height: 100%; object-fit: cover; }
-        #overlay-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        
-        #status-display { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.65); color: #fff; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 14px; z-index: 10; backdrop-filter: blur(4px); }
-        
-        /* UIパネル */
-        .controls { position: relative; height: 50vh; padding: 20px; box-sizing: border-box; background: var(--bg); border-top-left-radius: 24px; border-top-right-radius: 24px; margin-top: -24px; box-shadow: 0 -8px 24px rgba(0,0,0,0.12); z-index: 20; display: flex; flex-direction: column; }
-        .master-info { background: #fff; padding: 16px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.05); }
-        .info-label { font-size: 12px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        #target-info { font-size: 20px; font-weight: 800; color: #1c1c1e; }
-        
-        .btn-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
-        .m-btn { border: 2px solid #e5e5ea; border-radius: 14px; padding: 16px 10px; background: #fff; font-weight: 700; font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; color: #3a3a3c; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .m-btn.active { border-color: var(--primary); background: #e1f0ff; color: var(--primary); transform: scale(0.98); box-shadow: inset 0 2px 4px rgba(0,122,255,0.1); }
-        
-        /* 履歴・カウント */
-        .stats-row { display: flex; gap: 12px; margin-bottom: 16px; }
-        .stat-card { flex: 1; background: #fff; padding: 12px; border-radius: 14px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
-        .stat-val { font-size: 24px; font-weight: 800; }
-        
-        .log-container { flex: 1; background: #fff; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(0,0,0,0.05); }
-        .log-header { padding: 10px 16px; background: #f9f9f9; font-size: 12px; font-weight: 700; color: #8e8e93; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
-        #log-list { overflow-y: auto; flex: 1; font-family: ui-monospace, SFMono-Regular, monospace; }
-        .log-item { padding: 10px 16px; border-bottom: 1px solid #f2f2f7; display: flex; justify-content: space-between; align-items: center; font-size: 13px; animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-        .res-ok { color: var(--success); font-weight: 700; }
-        .res-ng { color: var(--danger); font-weight: 700; }
+    <style>
+        :root { --primary: #007aff; --success: #34c759; --danger: #ff3b30; --bg: #f2f2f7; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); color: #1c1c1e; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        .safe-area-top { height: env(safe-area-inset-top); background: #000; }
+        
+        /* プレビューエリアの最適化 */
+        #preview-container { position: relative; width: 100%; height: 50vh; background: #000; overflow: hidden; }
+        #preview-canvas { width: 100%; height: 100%; object-fit: cover; }
+        #overlay-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        
+        #status-display { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.65); color: #fff; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 14px; z-index: 10; backdrop-filter: blur(4px); }
+        
+        /* UIパネル */
+        .controls { position: relative; height: 50vh; padding: 20px; box-sizing: border-box; background: var(--bg); border-top-left-radius: 24px; border-top-right-radius: 24px; margin-top: -24px; box-shadow: 0 -8px 24px rgba(0,0,0,0.12); z-index: 20; display: flex; flex-direction: column; }
+        .master-info { background: #fff; padding: 16px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.05); }
+        .info-label { font-size: 12px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        #target-info { font-size: 20px; font-weight: 800; color: #1c1c1e; }
+        
+        .btn-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+        .m-btn { border: 2px solid #e5e5ea; border-radius: 14px; padding: 16px 10px; background: #fff; font-weight: 700; font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; color: #3a3a3c; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .m-btn.active { border-color: var(--primary); background: #e1f0ff; color: var(--primary); transform: scale(0.98); box-shadow: inset 0 2px 4px rgba(0,122,255,0.1); }
+        
+        /* 履歴・カウント */
+        .stats-row { display: flex; gap: 12px; margin-bottom: 16px; }
+        .stat-card { flex: 1; background: #fff; padding: 12px; border-radius: 14px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+        .stat-val { font-size: 24px; font-weight: 800; }
+        
+        .log-container { flex: 1; background: #fff; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(0,0,0,0.05); }
+        .log-header { padding: 10px 16px; background: #f9f9f9; font-size: 12px; font-weight: 700; color: #8e8e93; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        #log-list { overflow-y: auto; flex: 1; font-family: ui-monospace, SFMono-Regular, monospace; }
+        .log-item { padding: 10px 16px; border-bottom: 1px solid #f2f2f7; display: flex; justify-content: space-between; align-items: center; font-size: 13px; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        .res-ok { color: var(--success); font-weight: 700; }
+        .res-ng { color: var(--danger); font-weight: 700; }
 
-        /* フラッシュ演出 */
-        .flash-ok { animation: flash-g 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-        .flash-ng { animation: flash-r 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-        @keyframes flash-g { 0% { background: var(--success); } 100% { background: var(--bg); } }
-        @keyframes flash-r { 0% { background: var(--danger); } 100% { background: var(--bg); } }
-    </style>
+        /* フラッシュ演出 */
+        .flash-ok { animation: flash-g 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .flash-ng { animation: flash-r 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes flash-g { 0% { background: var(--success); } 100% { background: var(--bg); } }
+        @keyframes flash-r { 0% { background: var(--danger); } 100% { background: var(--bg); } }
+    </style>
 </head>
 <body>
 
 <div class="safe-area-top"></div>
 <div id="preview-container">
-    <canvas id="preview-canvas"></canvas>
-    <canvas id="overlay-canvas"></canvas>
-    <div id="status-display">READY</div>
+    <canvas id="preview-canvas"></canvas>
+    <canvas id="overlay-canvas"></canvas>
+    <div id="status-display">READY</div>
 </div>
 
 <div class="controls">
-    <div class="master-info">
-        <div class="info-label">Current Target</div>
-        <div id="target-info">未選択</div>
-    </div>
+    <div class="master-info">
+        <div class="info-label">Current Target</div>
+        <div id="target-info">未選択</div>
+    </div>
 
-    <div class="btn-grid">
-        <button class="m-btn" id="btn-A" onclick="setMaster('Aパーツ')">Aパーツ</button>
-        <button class="m-btn" id="btn-B" onclick="setMaster('Bパーツ')">Bパーツ</button>
-        <button class="m-btn" id="btn-C" onclick="setMaster('Cパーツ')">Cパーツ</button>
-        <button class="m-btn" onclick="confirmReset()" style="color: var(--danger); border-color: #ffd6d6;">リセット</button>
-    </div>
+    <div class="btn-grid">
+        <button class="m-btn" id="btn-A" onclick="setMaster('Aパーツ')">Aパーツ</button>
+        <button class="m-btn" id="btn-B" onclick="setMaster('Bパーツ')">Bパーツ</button>
+        <button class="m-btn" id="btn-C" onclick="setMaster('Cパーツ')">Cパーツ</button>
+        <button class="m-btn" onclick="confirmReset()" style="color: var(--danger); border-color: #ffd6d6;">リセット</button>
+    </div>
 
-    <div class="stats-row">
-        <div class="stat-card"><div class="info-label">OK</div><div id="cnt-ok" class="stat-val" style="color: var(--success);">0</div></div>
-        <div class="stat-card"><div class="info-label">NG</div><div id="cnt-ng" class="stat-val" style="color: var(--danger);">0</div></div>
-    </div>
+    <div class="stats-row">
+        <div class="stat-card"><div class="info-label">OK</div><div id="cnt-ok" class="stat-val" style="color: var(--success);">0</div></div>
+        <div class="stat-card"><div class="info-label">NG</div><div id="cnt-ng" class="stat-val" style="color: var(--danger);">0</div></div>
+    </div>
 
-    <div class="log-container">
-        <div class="log-header"><span>RECENT LOGS</span><span onclick="clearLogs()" style="color:var(--primary); cursor:pointer;">Clear</span></div>
-        <div id="log-list"></div>
-    </div>
+    <div class="log-container">
+        <div class="log-header"><span>RECENT LOGS</span><span onclick="clearLogs()" style="color:var(--primary)">Clear</span></div>
+        <div id="log-list"></div>
+    </div>
 </div>
 
 <audio id="snd-ok" src="https://tiraer.github.io/audio/ok.mp3" preload="auto"></audio>
 <audio id="snd-ng" src="https://tiraer.github.io/audio/ng.mp3" preload="auto"></audio>
 
 <script>
-    // --- グローバル変数 ---
-    const video = document.createElement("video");
-    const canvas = document.getElementById("preview-canvas");
-    const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
-    const overlay = document.getElementById("overlay-canvas");
-    const octx = overlay.getContext("2d");
-    const statusText = document.getElementById("status-display");
+    // --- グローバル変数 ---
+    const video = document.createElement("video");
+    const canvas = document.getElementById("preview-canvas");
+    const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+    const overlay = document.getElementById("overlay-canvas");
+    const octx = overlay.getContext("2d");
+    const statusText = document.getElementById("status-display");
 
-    let activeMaster = null;
-    let isLocked = false;
-    let lastAnalysisTime = 0;
-    const ANALYSIS_INTERVAL = 120; // 0.12秒ごとに解析（描画は毎フレーム行うことで「もっさり」を解消）
+    let activeMaster = null;
+    let isLocked = false;
+    let lastAnalysisTime = 0;
+    const ANALYSIS_INTERVAL = 120; // 0.12秒ごとに解析（もっさり解消の肝）
 
-    let countOK = 0;
-    let countNG = 0;
+    let countOK = 0;
+    let countNG = 0;
 
-    // --- カメラ初期化 ---
-    async function startCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { 
-                    facingMode: "environment", 
-                    width: { ideal: 1280 }, 
-                    height: { ideal: 720 },
-                    frameRate: { ideal: 30 }
-                }
-            });
-            video.srcObject = stream;
-            video.setAttribute("playsinline", true);
-            video.play();
-            requestAnimationFrame(tick);
-        } catch (err) {
-            alert("カメラを起動できませんでした: " + err);
-        }
-    }
+    // --- カメラ初期化 ---
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { 
+                    facingMode: "environment", 
+                    width: { ideal: 1280 }, 
+                    height: { ideal: 720 },
+                    frameRate: { ideal: 30 }
+                }
+            });
+            video.srcObject = stream;
+            video.setAttribute("playsinline", true);
+            video.play();
+            requestAnimationFrame(tick);
+        } catch (err) {
+            alert("カメラを起動できませんでした: " + err);
+        }
+    }
 
-    // --- メインループ（最適化済み） ---
-    function tick() {
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            // キャンバスサイズの同期
-            if (canvas.width !== video.videoWidth) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                overlay.width = video.videoWidth;
-                overlay.height = video.videoHeight;
-            }
+    // --- メインループ（最適化済み） ---
+    function tick() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            // サイズ同期（初回のみ実行）
+            if (canvas.width !== video.videoWidth) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                overlay.width = video.videoWidth;
+                overlay.height = video.videoHeight;
+            }
 
-            // 1. 映像の描画（常に実行。これでプレビューが滑らかになる）
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // 1. プレビュー描画（常に実行。これで映像がヌルヌルになる）
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // 2. 解析処理（一定の間隔おきに実行して負荷を軽減）
-            const now = Date.now();
-            if (!isLocked && now - lastAnalysisTime > ANALYSIS_INTERVAL) {
-                lastAnalysisTime = now;
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                
-                // jsQRライブラリの呼び出し
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert", // 反転解析をオフにして高速化
-                });
+            // 2. 解析処理（一定時間おきに実行してCPU負荷を下げる）
+            const now = Date.now();
+            if (!isLocked && now - lastAnalysisTime > ANALYSIS_INTERVAL) {
+                lastAnalysisTime = now;
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                // jsQRライブラリの呼び出し
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
 
-                if (code) {
-                    drawScannerRect(code.location);
-                    handleScanResult(code.data);
-                } else {
-                    octx.clearRect(0, 0, overlay.width, overlay.height);
-                }
-            }
-        }
-        requestAnimationFrame(tick);
-    }
+                if (code) {
+                    drawScannerRect(code.location);
+                    handleScanResult(code.data);
+                } else {
+                    octx.clearRect(0, 0, overlay.width, overlay.height);
+                }
+            }
+        }
+        // 次の描画フレームを予約
+        requestAnimationFrame(tick);
+    }
 
-    // --- QRコードの枠線描画 ---
-    function drawScannerRect(loc) {
-        octx.clearRect(0, 0, overlay.width, overlay.height);
-        octx.beginPath();
-        octx.moveTo(loc.topLeftCorner.x, loc.topLeftCorner.y);
-        octx.lineTo(loc.topRightCorner.x, loc.topRightCorner.y);
-        octx.lineTo(loc.bottomRightCorner.x, loc.bottomRightCorner.y);
-        octx.lineTo(loc.bottomLeftCorner.x, loc.bottomLeftCorner.y);
-        octx.closePath();
-        octx.lineWidth = 10;
-        octx.strokeStyle = "#007aff";
-        octx.stroke();
-    }
+    // --- 枠線描画 ---
+    function drawScannerRect(loc) {
+        octx.clearRect(0, 0, overlay.width, overlay.height);
+        octx.beginPath();
+        octx.moveTo(loc.topLeftCorner.x, loc.topLeftCorner.y);
+        octx.lineTo(loc.topRightCorner.x, loc.topRightCorner.y);
+        octx.lineTo(loc.bottomRightCorner.x, loc.bottomRightCorner.y);
+        octx.lineTo(loc.bottomLeftCorner.x, loc.bottomLeftCorner.y);
+        octx.closePath();
+        octx.lineWidth = 10;
+        octx.strokeStyle = "#007aff";
+        octx.stroke();
+    }
 
-    // --- マスター選択 ---
-    function setMaster(name) {
-        activeMaster = name;
-        document.getElementById("target-info").innerText = name;
-        document.querySelectorAll('.m-btn').forEach(b => {
-            b.classList.toggle('active', b.innerText === name);
-        });
-        // iOSでの音声再生制限解除（ユーザー操作時に一度鳴らす）
-        const s = document.getElementById("snd-ok");
-        s.muted = true; s.play().then(() => { s.pause(); s.muted = false; });
-    }
+    // --- マスター選択 ---
+    function setMaster(name) {
+        activeMaster = name;
+        document.getElementById("target-info").innerText = name;
+        document.querySelectorAll('.m-btn').forEach(b => {
+            b.classList.toggle('active', b.innerText === name);
+        });
+    }
 
-    // --- 照合判定 ---
-    function handleScanResult(data) {
-        if (!activeMaster) {
-            statusText.innerText = "SELECT MASTER";
-            return;
-        }
+    // --- 照合処理 ---
+    function handleScanResult(data) {
+        if (!activeMaster) {
+            statusText.innerText = "SELECT MASTER";
+            return;
+        }
 
-        isLocked = true; // 判定中の二重読み込み防止
-        const isOK = data.includes(activeMaster); // 部分一致判定
-        
-        const timestamp = new Date().toLocaleTimeString();
-        const logList = document.getElementById("log-list");
-        const logItem = document.createElement("div");
-        logItem.className = "log-item";
+        isLocked = true; // 判定中の重複読み込み防止
+        const isOK = data.includes(activeMaster); // 部分一致判定
+        
+        const timestamp = new Date().toLocaleTimeString();
+        const logList = document.getElementById("log-list");
+        const logItem = document.createElement("div");
+        logItem.className = "log-item";
 
-        if (isOK) {
-            countOK++;
-            document.getElementById("cnt-ok").innerText = countOK;
-            document.getElementById("snd-ok").play();
-            document.body.className = "flash-ok";
-            statusText.innerText = "MATCH";
-            logItem.innerHTML = `<span>${timestamp}</span> <span class="res-ok">OK: ${data}</span>`;
-        } else {
-            countNG++;
-            document.getElementById("cnt-ng").innerText = countNG;
-            document.getElementById("snd-ng").play();
-            document.body.className = "flash-ng";
-            statusText.innerText = "ERROR";
-            logItem.innerHTML = `<span>${timestamp}</span> <span class="res-ng">NG: ${data}</span>`;
-        }
+        if (isOK) {
+            countOK++;
+            document.getElementById("cnt-ok").innerText = countOK;
+            document.getElementById("snd-ok").play();
+            document.body.className = "flash-ok";
+            statusText.innerText = "MATCH";
+            logItem.innerHTML = `<span>${timestamp}</span> <span class="res-ok">OK: ${data}</span>`;
+        } else {
+            countNG++;
+            document.getElementById("cnt-ng").innerText = countNG;
+            document.getElementById("snd-ng").play();
+            document.body.className = "flash-ng";
+            statusText.innerText = "ERROR";
+            logItem.innerHTML = `<span>${timestamp}</span> <span class="res-ng">NG: ${data}</span>`;
+        }
 
-        logList.prepend(logItem);
+        logList.prepend(logItem);
 
-        // 1.2秒後にスキャン再開
-        setTimeout(() => {
-            isLocked = false;
-            document.body.className = "";
-            statusText.innerText = "READY";
-        }, 1200);
-    }
+        // 1.2秒後にスキャン再開
+        setTimeout(() => {
+            isLocked = false;
+            document.body.className = "";
+            statusText.innerText = "READY";
+        }, 1200);
+    }
 
-    function clearLogs() {
-        if(confirm("履歴を削除しますか？")) {
-            document.getElementById("log-list").innerHTML = "";
-        }
-    }
+    function clearLogs() {
+        document.getElementById("log-list").innerHTML = "";
+    }
 
-    function confirmReset() {
-        if (confirm("カウントと履歴をリセットして最初からやり直しますか？")) {
-            location.reload();
-        }
-    }
+    function confirmReset() {
+        if (confirm("カウントと履歴をリセットして最初からやり直しますか？")) {
+            location.reload();
+        }
+    }
 
-    window.onload = startCamera;
+    // 起動
+    window.onload = startCamera;
 </script>
 </body>
 </html>
