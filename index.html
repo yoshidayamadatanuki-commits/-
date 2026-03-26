@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QR SCANNER PRO v46</title>
+    <title>QR SCANNER PRO v47</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --safe-area-bottom: env(safe-area-inset-bottom); }
@@ -92,7 +92,6 @@
         <div class="modal-content">
             <h2>判定履歴・集計</h2>
             <div id="summary-dashboard" style="background:#eef6ff; padding:20px; border-radius:15px; margin-bottom:20px;"></div>
-            <div id="full-log-list"></div>
         </div>
         <div style="padding:20px;">
             <button onclick="exportCSV()" style="width:100%; background:#008800; color:white; padding:20px; border-radius:15px; margin-bottom:12px; font-weight:bold;">📤 CSV出力</button>
@@ -102,10 +101,14 @@
     </div>
 
 <script>
+// --- 定数 ---
 const UNLOCK_PASSWORD = "8181";
-const SCAN_INTERVAL_MS = 30000; // 30秒
-const MIN_CHAR_LENGTH = 6;      // 5文字以下無視
+const SCAN_INTERVAL_MS = 30000;
+const MIN_CHAR_LENGTH = 6;
+const STORAGE_KEY_LOGS = "QR_CHECK_LOGS_V47";
+const STORAGE_KEY_MASTERS = "QR_CHECK_MASTERS_V47";
 
+// --- 変数 ---
 const video = document.createElement("video");
 const canvasElement = document.getElementById("canvas");
 const canvas = canvasElement.getContext("2d", { willReadFrequently: true });
@@ -113,10 +116,11 @@ const miniCanvasElement = document.getElementById("mini-canvas");
 const miniCanvas = miniCanvasElement.getContext("2d");
 let audioCtx, isLocked = false, isInterval = false, currentFacingMode = "user", okCount = 0, isProcessing = false;
 
-let masters = JSON.parse(localStorage.getItem("kb_v19_masters")) || [];
-let logs = JSON.parse(localStorage.getItem("kb_v19_logs")) || [];
+let masters = JSON.parse(localStorage.getItem(STORAGE_KEY_MASTERS)) || [];
+let logs = JSON.parse(localStorage.getItem(STORAGE_KEY_LOGS)) || [];
 let activeMaster = null;
 
+// 音声再生
 function playBeep(type) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === "suspended") audioCtx.resume();
@@ -203,19 +207,24 @@ function unlock() {
     } else { alert("パスワード違います"); document.getElementById("pw-input").value = ""; }
 }
 
+// ★修正：確実に保存する
 function saveLog(res) {
     const now = new Date();
-    logs.push({ date: now.toLocaleDateString(), time: now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"}), master: activeMaster.name, result: res });
-    localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
+    const newEntry = { 
+        date: now.toLocaleDateString(), 
+        time: now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"}), 
+        master: activeMaster.name, 
+        result: res 
+    };
+    logs.push(newEntry);
+    localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(logs));
     renderRecentLogs();
 }
 
-// ★修正：切り替え時の警告を強化
 function selectMasterFromPullDown() {
     const sel = document.getElementById("master-select");
     if (sel.value !== "") {
         const m = masters[parseInt(sel.value)];
-        // 【重要】警告文を詳細化
         if (confirm(`照合対象を「${m.name}」に変更します。\nこれまでの読み取り枚数（${okCount}枚）もリセットされますが、よろしいですか？`)) {
             activeMaster = m;
             document.getElementById("target-info").innerText = activeMaster.name;
@@ -239,38 +248,75 @@ function registerNew() {
     if (!code) return alert("認識不可");
     if (code.data.length < MIN_CHAR_LENGTH) { if (!confirm("5文字以下は検品で無視されますが登録しますか？")) return; }
     const name = prompt("製品名:");
-    if (name) { masters.push({name: name, code: code.data}); saveMasters(); }
+    if (name) { 
+        masters.push({name: name, code: code.data}); 
+        localStorage.setItem(STORAGE_KEY_MASTERS, JSON.stringify(masters));
+        renderMasters(); renderEditList();
+    }
 }
 
-function saveMasters() { localStorage.setItem("kb_v19_masters", JSON.stringify(masters)); renderMasters(); renderEditList(); }
 function renderEditList() {
     document.getElementById("edit-list").innerHTML = masters.map((m, i) => `
         <div style="padding:15px; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
-            <b>${m.name}</b><button onclick="deleteMaster(${i})" style="color:red; background:none; border:1px solid red; padding:5px 10px; border-radius:5px;">削除</button>
+            <b>${m.name}</b><button onclick="deleteMaster(${i})" style="color:red; background:none; border:2px solid red; padding:5px 10px; border-radius:5px;">削除</button>
         </div>`).join("");
 }
-function deleteMaster(i) { if (confirm("削除？")) { masters.splice(i,1); saveMasters(); } }
+function deleteMaster(i) { if (confirm("削除？")) { masters.splice(i,1); localStorage.setItem(STORAGE_KEY_MASTERS, JSON.stringify(masters)); renderMasters(); renderEditList(); } }
 
 function renderRecentLogs() {
     const recent = logs.slice(-3).reverse();
     document.getElementById("recent-logs").innerHTML = recent.map(l => `<div class="log-item"><span><b style="color:${l.result==='OK'?'#28a745':'#dc3545'}">[${l.result}]</b> ${l.time}</span><span>${l.master}</span></div>`).join("") || '<div style="color:#999; text-align:center; padding-top:40px;">履歴なし</div>';
 }
 
-function toggleModal(id) { if (isLocked) return; const m = document.getElementById(id); m.style.display = (m.style.display === "flex") ? "none" : "flex"; if (id === "log-modal") renderAnalysis(); }
+function toggleModal(id) { 
+    if (isLocked) return; 
+    const m = document.getElementById(id); 
+    m.style.display = (m.style.display === "flex") ? "none" : "flex"; 
+    if (id === "log-modal") renderAnalysis(); 
+}
 
+// ★修正：集計表示のロジック
 function renderAnalysis() {
+    // 最新データを再取得
+    logs = JSON.parse(localStorage.getItem(STORAGE_KEY_LOGS)) || [];
+    
+    if (logs.length === 0) {
+        document.getElementById("summary-dashboard").innerHTML = '<div style="text-align:center; padding:20px;">まだ履歴がありません。</div>';
+        return;
+    }
+
     const stats = {}; let tok = 0, tng = 0;
     logs.forEach(l => {
         const k = `${l.date}__${l.master}`;
         if (!stats[k]) stats[k] = { ok: 0, ng: 0 };
         if (l.result === "OK") { stats[k].ok++; tok++; } else { stats[k].ng++; tng++; }
     });
-    let h = `累計: OK ${tok} / NG ${tng}<hr><table style="width:100%; font-size:1rem;">`;
-    Object.keys(stats).reverse().forEach(k => { const [d, m] = k.split("__"); h += `<tr><td>${d}</td><td>${m}</td><td>OK:${stats[k].ok}</td><td style="color:red">NG:${stats[k].ng}</td></tr>`; });
-    document.getElementById("summary-dashboard").innerHTML = h + `</table>`;
+
+    let h = `<div style="margin-bottom:15px; font-weight:bold;">累計: OK <span style="color:green">${tok}</span> / NG <span style="color:red">${tng}</span></div>`;
+    h += `<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">`;
+    h += `<tr style="background:#ddd;"><th style="padding:5px;">日付</th><th style="padding:5px;">マスター</th><th style="padding:5px;">OK</th><th style="padding:5px;">NG</th></tr>`;
+    
+    Object.keys(stats).reverse().forEach(k => { 
+        const [d, m] = k.split("__"); 
+        h += `<tr style="border-bottom:1px solid #eee;">
+                <td style="padding:8px;">${d}</td>
+                <td style="padding:8px;">${m}</td>
+                <td style="padding:8px; text-align:center;">${stats[k].ok}</td>
+                <td style="padding:8px; text-align:center; color:red;">${stats[k].ng}</td>
+              </tr>`; 
+    });
+    h += `</table>`;
+    document.getElementById("summary-dashboard").innerHTML = h;
 }
 
-function clearLogs() { if (confirm("履歴全削除？")) { logs = []; localStorage.setItem("kb_v19_logs", "[]"); renderRecentLogs(); renderAnalysis(); } }
+function clearLogs() { 
+    if (confirm("全ての履歴をリセットしますか？\n(CSV出力は済んでいますか？)")) { 
+        logs = []; 
+        localStorage.setItem(STORAGE_KEY_LOGS, "[]"); 
+        renderRecentLogs(); 
+        renderAnalysis(); 
+    } 
+}
 
 function confirmFinish() {
     if (confirm("現在の生産を終了します。読み取り枚数もリセットされますがよろしいですか？")) {
@@ -279,12 +325,16 @@ function confirmFinish() {
         resetCount();
     }
 }
+
 function exportCSV() {
+    if (logs.length === 0) return alert("出力する履歴がありません");
     let csv = "日付,時間,製品名,結果\n";
     logs.forEach(l => csv += `${l.date},${l.time},${l.master},${l.result}\n`);
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `report.csv`; a.click();
 }
+
+// 初期化
 renderMasters(); renderEditList(); renderRecentLogs();
 </script>
 </body>
