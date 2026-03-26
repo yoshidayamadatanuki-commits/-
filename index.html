@@ -45,7 +45,7 @@
     </div>
 
     <div id="start-overlay" onclick="startApp()">
-        <div style="font-size: 5rem;">📷</div>
+        <div style="font-size: 5rem;"></div>
         <div style="font-size: 2rem; font-weight: 900; color: white;">タップして開始</div>
     </div>
 
@@ -71,9 +71,9 @@
     <div class="log-display-area" id="recent-logs"></div>
 
     <div class="btn-group">
-        <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ 登録</button>
-        <button class="btn-sub" onclick="toggleModal('log-modal')">📊 集計</button>
-        <button class="btn-sub" onclick="confirmFinish()" style="background:#b40000;">■ 終了</button>
+        <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ マスター登録</button>
+        <button class="btn-sub" onclick="toggleModal('log-modal')">📊 照合履歴</button>
+        <button class="btn-sub" onclick="confirmFinish()" style="background:#b40000;">■ 生産終了</button>
     </div>
 
     <div id="mgmt-modal" class="modal">
@@ -103,7 +103,7 @@
 <script>
 // --- 定数 ---
 const UNLOCK_PASSWORD = "8181";
-const SCAN_INTERVAL_MS = 30000;
+const SCAN_INTERVAL_MS = 300;
 const MIN_CHAR_LENGTH = 6;
 const STORAGE_KEY_LOGS = "QR_CHECK_LOGS_V47";
 const STORAGE_KEY_MASTERS = "QR_CHECK_MASTERS_V47";
@@ -225,7 +225,7 @@ function selectMasterFromPullDown() {
     const sel = document.getElementById("master-select");
     if (sel.value !== "") {
         const m = masters[parseInt(sel.value)];
-        if (confirm(`照合対象を「${m.name}」に変更します。\nこれまでの読み取り枚数（${okCount}枚）もリセットされますが、よろしいですか？`)) {
+        if (confirm(`照合対象を「${m.name}」に変更します。\nこれまでの読み取り枚数もリセットされますが、よろしいですか？`)) {
             activeMaster = m;
             document.getElementById("target-info").innerText = activeMaster.name;
             isInterval = isProcessing = false; document.body.className = "";
