@@ -78,7 +78,7 @@
     <div id="start-overlay" onclick="startApp()">タップして開始</div>
     
     <div id="status-display">READY</div>
-    <div id="count-display">読み取り数: 0 枚</div>
+    <div id="count-display">かんばん照合: 0 枚</div>
     
     <div class="video-container">
         <div id="camera-switch" onclick="switchCamera()">🔄</div>
@@ -99,9 +99,9 @@
     <div class="log-display-area" id="recent-logs"></div>
 
     <div class="btn-group">
-        <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ 設定</button>
-        <button class="btn-sub" onclick="toggleModal('log-modal')">📊 集計</button>
-        <button class="btn-sub" onclick="confirmFinish()" style="background:#b40000;">■ 終了</button>
+        <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ マスター登録</button>
+        <button class="btn-sub" onclick="toggleModal('log-modal')">📊 照合履歴</button>
+        <button class="btn-sub" onclick="confirmFinish()" style="background:#b40000;">■ 生産終了</button>
     </div>
 
     <div id="mgmt-modal" class="modal">
@@ -145,7 +145,7 @@ let audioCtx;
 let isLocked = false;
 let isInterval = false;
 let currentFacingMode = "user"; // "user" または "environment"
-let okCount = 0; // 現在の読み取り枚数
+let okCount = 0; // 現在のかんばん照合枚数
 let lastAnalysisTime = 0; // 最後に解析した時刻を記録
 
 function playBeep(type) {
@@ -285,7 +285,7 @@ function updateStatus(ok) {
 }
 
 function updateCountDisplay() {
-    document.getElementById("count-display").innerText = `読み取り数: ${okCount} 枚`;
+    document.getElementById("count-display").innerText = `かんばん照合数: ${okCount} 枚`;
 }
 
 function resetCount() {
@@ -320,7 +320,7 @@ function selectMasterFromPullDown() {
     const val = sel.value;
     if (val !== "") {
         const targetName = masters[parseInt(val)].name;
-        if (confirm(`照合対象を「${targetName}」に変更しますか？\n（読み取り枚数もリセットされます）`)) {
+        if (confirm(`照合対象を「${targetName}」に変更しますか？\n（かんばん照合枚数もリセットされます）`)) {
             activeMaster = masters[parseInt(val)];
             document.getElementById("target-info").innerText = activeMaster.name;
             isInterval = false;
@@ -398,7 +398,7 @@ function clearLogs() { if (confirm("履歴を削除しますか？")) { logs = [
 
 function confirmFinish() {
     if (isLocked) return;
-    if (confirm("生産を終了しますか？\n（読み取り枚数もリセットされます）")) {
+    if (confirm("生産を終了しますか？\n（かんばん照合枚数もリセットされます）")) {
         activeMaster = null;
         isInterval = false;
         document.getElementById("target-info").innerText = "未選択";
