@@ -3,56 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QR SCANNER v44 - STRICT GUARD</title>
+    <title>QR SCANNER PRO v46</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --safe-area-bottom: env(safe-area-inset-bottom); }
         body { margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        body.ok { background:#28a745 !important; }
-        body.ng { background:#dc3545 !important; }
-        body.wait { background:#444 !important; }
-
+        body.ok { background: #28a745 !important; }
+        body.ng { background: #dc3545 !important; }
+        body.wait { background: #444 !important; }
         #status-display { font-size: 8rem; font-weight: 900; height: 1.1em; text-shadow: 6px 6px 12px rgba(0,0,0,0.9); text-align: center; line-height: 1.0; flex-shrink: 0; margin-top: 10px; }
         #count-display { font-size: 2.5rem; font-weight: 900; text-align: center; color: #ffeb3b; text-shadow: 2px 2px 4px #000; margin-bottom: 5px; }
-
         .video-container { position: relative; width: 85%; max-width: 380px; aspect-ratio: 1 / 1; border: 5px solid #fff; border-radius: 20px; overflow: hidden; margin: 0 auto 5px; background: #222; flex-shrink: 0; }
         #canvas { width: 100%; height: 100%; object-fit: cover; }
         .mirror { transform: scaleX(-1); }
-
-        #camera-switch { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: 2px solid #fff; border-radius: 50%; width: 50px; height: 50px; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; z-index: 10; cursor: pointer; }
-        
-        .info-panel { margin: 5px 10px; padding: 10px; background: rgba(255,255,255,0.3); border-radius: 15px; border: 4px solid #fff; text-align: center; flex-shrink: 0; }
-        #target-info { font-size: 4.2rem; font-weight: 900; line-height: 1.0; word-break: break-all; color: #fff; text-shadow: 3px 3px 8px #000; }
-
-        .master-panel { background:#f4f7f9; color:#333; padding: 12px 15px 5px; border-radius: 20px 20px 0 0; margin-top: auto; }
-        #master-select { width: 100%; padding: 20px; font-size: 1.8rem; border-radius: 15px; border: 3px solid #007bff; font-weight: 900; background: #fff; text-align: center; color: #007bff; }
-
-        .log-display-area { background: #fff; color: #333; height: 115px; overflow: hidden; padding: 0 20px; border-bottom: 1px solid #ddd; }
+        #camera-switch { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.6); color: white; border: 2px solid #fff; border-radius: 50%; width: 55px; height: 55px; font-size: 1.8rem; display: flex; justify-content: center; align-items: center; z-index: 10; cursor: pointer; }
+        .info-panel { margin: 5px 12px; padding: 12px; background: rgba(255,255,255,0.25); border-radius: 18px; border: 4px solid #fff; text-align: center; flex-shrink: 0; }
+        #target-info { font-size: 4rem; font-weight: 900; line-height: 1.0; word-break: break-all; color: #fff; text-shadow: 3px 3px 8px #000; }
+        .master-panel { background: #f8f9fa; color: #333; padding: 15px 15px 8px; border-radius: 24px 24px 0 0; margin-top: auto; }
+        #master-select { width: 100%; padding: 22px; font-size: 1.8rem; border-radius: 16px; border: 3px solid #007bff; font-weight: 900; background: #fff; text-align: center; color: #007bff; -webkit-appearance: none; }
+        .log-display-area { background: #fff; color: #333; height: 110px; overflow: hidden; padding: 5px 20px; border-bottom: 1px solid #ddd; }
         .log-item { padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
-        .btn-group { background:#fff; padding: 8px 10px calc(5px + var(--safe-area-bottom)); display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; }
-        button { padding: 20px 5px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; font-size: 1.1rem; }
-        .btn-main { background:#007bff; color:white; }
-        .btn-sub { background:#555; color:white; }
-        
+        .btn-group { background: #fff; padding: 10px 10px calc(8px + var(--safe-area-bottom)); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        button { padding: 22px 5px; border-radius: 15px; border: none; font-weight: 900; cursor: pointer; font-size: 1.2rem; }
+        .btn-main { background: #007bff; color: white; }
+        .btn-sub { background: #6c757d; color: white; }
         #lock-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(220, 53, 69, 0.98); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; text-align: center; color: white; }
-        #lock-overlay h1 { font-size: 6rem; margin: 0; font-weight: 900; }
-        #pw-input { font-size: 3rem; width: 80%; max-width: 300px; padding: 15px; text-align: center; border-radius: 15px; border: none; margin-bottom: 20px; -webkit-text-security: disc; }
-
-        #start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#111; display:flex; justify-content:center; align-items:center; z-index:9999; font-size:2rem; font-weight:bold; color:white; }
-        .modal { position:fixed; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; background:#fff; z-index:5000; color:#333; }
+        #lock-overlay h1 { font-size: 7rem; margin: 0; font-weight: 900; }
+        #pw-input { font-size: 3.5rem; width: 85%; max-width: 320px; padding: 20px; text-align: center; border-radius: 20px; border: none; margin: 20px 0; -webkit-text-security: disc; }
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; background: #fff; z-index: 5000; color: #333; }
         .modal-content { padding: 20px; flex-grow: 1; overflow-y: auto; }
-        #mini-canvas { width: 100%; max-width: 320px; transform: scaleX(-1); border-radius: 15px; border: 3px solid #000; }
+        #mini-canvas { width: 100%; max-width: 320px; transform: scaleX(-1); border-radius: 20px; border: 4px solid #333; }
     </style>
 </head>
 <body>
     <div id="lock-overlay">
         <h1>NG 発生</h1>
-        <p>確認が必要です。パスワードを入力してください。</p>
+        <p style="font-size:1.5rem; font-weight:bold;">パスワードを入力してください</p>
         <input type="number" id="pw-input" placeholder="****" inputmode="numeric">
-        <button onclick="unlock()" style="background: white; color: #dc3545; padding: 20px 50px; font-size: 1.5rem; border-radius: 15px; font-weight: 900; border:none;">解除</button>
+        <button onclick="unlock()" style="background: white; color: #dc3545; padding: 25px 60px; font-size: 1.8rem; border-radius: 20px; font-weight: 900; border:none;">解除</button>
     </div>
 
-    <div id="start-overlay" onclick="startApp()">タップして開始</div>
+    <div id="start-overlay" onclick="startApp()">
+        <div style="font-size: 5rem;">📷</div>
+        <div style="font-size: 2rem; font-weight: 900; color: white;">タップして開始</div>
+    </div>
+
     <div id="status-display">READY</div>
     <div id="count-display">読み取り数: 0 枚</div>
     
@@ -62,55 +58,53 @@
     </div>
     
     <div class="info-panel">
-        <div style="color:#eee; font-weight:bold;">生産中の製品</div>
+        <div style="color:rgba(255,255,255,0.8); font-size: 1.1rem; font-weight: bold;">生産中の製品</div>
         <div id="target-info">未選択</div>
     </div>
 
     <div class="master-panel">
         <select id="master-select" onchange="selectMasterFromPullDown()">
-            <option value="" disabled selected>▼ マスター変更</option>
+            <option value="" disabled selected>▼ 製品を選択してください</option>
         </select>
     </div>
 
     <div class="log-display-area" id="recent-logs"></div>
 
     <div class="btn-group">
-        <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ 設定</button>
+        <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ 登録</button>
         <button class="btn-sub" onclick="toggleModal('log-modal')">📊 集計</button>
         <button class="btn-sub" onclick="confirmFinish()" style="background:#b40000;">■ 終了</button>
     </div>
 
     <div id="mgmt-modal" class="modal">
         <div class="modal-content">
-            <h2>マスター登録</h2>
-            <div style="padding:15px;background:#eee;border-radius:15px;text-align:center;margin-bottom:20px;">
+            <h2>製品マスター登録</h2>
+            <div style="padding:20px; background:#f0f0f0; border-radius:20px; text-align:center;">
                 <canvas id="mini-canvas"></canvas>
-                <button class="btn-main" style="width:100%; margin-top:15px; padding:20px;" onclick="registerNew()">今のQRを登録</button>
+                <button class="btn-main" style="width:100%; margin-top:20px; padding:25px;" onclick="registerNew()">今のQRを登録</button>
             </div>
-            <div id="edit-list"></div>
+            <div id="edit-list" style="margin-top:20px;"></div>
         </div>
-        <div style="padding:20px; border-top:1px solid #ddd;">
-            <button class="btn-sub" style="width:100%; padding:20px;" onclick="toggleModal('mgmt-modal')">閉じる</button>
-        </div>
+        <div style="padding:20px; border-top:1px solid #ddd;"><button class="btn-sub" style="width:100%; padding:20px;" onclick="toggleModal('mgmt-modal')">閉じる</button></div>
     </div>
 
     <div id="log-modal" class="modal">
         <div class="modal-content">
-            <h2>集計</h2>
-            <div id="summary-dashboard" style="background:#eef6ff;padding:15px;border-radius:12px;margin-bottom:20px;"></div>
+            <h2>判定履歴・集計</h2>
+            <div id="summary-dashboard" style="background:#eef6ff; padding:20px; border-radius:15px; margin-bottom:20px;"></div>
             <div id="full-log-list"></div>
         </div>
         <div style="padding:20px;">
-            <button onclick="exportCSV()" style="width:100%;background:#008800;color:white;padding:18px;border-radius:10px;margin-bottom:12px; font-weight:bold;">📤 CSV出力</button>
-            <button onclick="clearLogs()" style="width:100%;background:none;color:red;border:2px solid red;padding:15px;border-radius:10px;margin-bottom:12px; font-weight:bold;">⚠️ 履歴リセット</button>
-            <button class="btn-sub" style="width:100%; padding:18px;" onclick="toggleModal('log-modal')">閉じる</button>
+            <button onclick="exportCSV()" style="width:100%; background:#008800; color:white; padding:20px; border-radius:15px; margin-bottom:12px; font-weight:bold;">📤 CSV出力</button>
+            <button onclick="clearLogs()" style="width:100%; background:none; color:red; border:2px solid red; padding:15px; border-radius:15px; margin-bottom:12px; font-weight:bold;">⚠️ 履歴をすべて削除</button>
+            <button class="btn-sub" style="width:100%; padding:20px;" onclick="toggleModal('log-modal')">閉じる</button>
         </div>
     </div>
 
 <script>
 const UNLOCK_PASSWORD = "8181";
-// ★【設定】待機時間は30秒
-const SCAN_INTERVAL_MS = 30000;
+const SCAN_INTERVAL_MS = 30000; // 30秒
+const MIN_CHAR_LENGTH = 6;      // 5文字以下無視
 
 const video = document.createElement("video");
 const canvasElement = document.getElementById("canvas");
@@ -143,10 +137,7 @@ function playBeep(type) {
     }
 }
 
-async function startApp() {
-    document.getElementById("start-overlay").style.display = "none";
-    await initCamera();
-}
+async function startApp() { document.getElementById("start-overlay").style.display = "none"; await initCamera(); }
 
 async function initCamera() {
     if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
@@ -154,33 +145,25 @@ async function initCamera() {
     try {
         const s = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = s; video.setAttribute("playsinline", true); await video.play();
-        if (currentFacingMode === "user") { canvasElement.classList.add("mirror"); } 
-        else { canvasElement.classList.remove("mirror"); }
+        if (currentFacingMode === "user") { canvasElement.classList.add("mirror"); } else { canvasElement.classList.remove("mirror"); }
         requestAnimationFrame(tick);
-    } catch (err) { alert("カメラ起動失敗: " + err); }
+    } catch (err) { alert("カメラ失敗: " + err); }
 }
 
-function switchCamera() {
-    currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
-    initCamera();
-}
+function switchCamera() { currentFacingMode = (currentFacingMode === "user") ? "environment" : "user"; initCamera(); }
 
 function tick() {
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvasElement.width = video.videoWidth; canvasElement.height = video.videoHeight;
         canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-        
         if (document.getElementById('mgmt-modal').style.display === 'flex') {
             miniCanvasElement.width = 400; miniCanvasElement.height = 400;
             miniCanvas.drawImage(video, 0, 0, 400, 400);
         }
-
         if (!isProcessing && !isLocked && !isInterval && activeMaster && document.getElementById("mgmt-modal").style.display !== "flex") {
             const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-            const code = jsQR(img.data, img.width, img.height);
-
-            // ★【設定】文字数制限を「6文字以上」に変更（5文字以下は無視）
-            if (code && code.data.trim().length > 5) {
+            const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+            if (code && code.data.trim().length >= MIN_CHAR_LENGTH) {
                 isProcessing = true;
                 const ok = (code.data === activeMaster.code);
                 playBeep(ok ? "ok" : "ng");
@@ -199,16 +182,12 @@ function updateStatus(ok) {
         setTimeout(() => {
             isInterval = true; isProcessing = false;
             document.body.className = "wait"; document.getElementById("status-display").innerText = "WAIT";
-            setTimeout(() => { 
-                isInterval = false; document.body.className = ""; document.getElementById("status-display").innerText = "READY"; 
-            }, SCAN_INTERVAL_MS);
-        }, 1000);
+            setTimeout(() => { isInterval = false; document.body.className = ""; document.getElementById("status-display").innerText = "READY"; }, SCAN_INTERVAL_MS);
+        }, 1200);
     } else {
         document.body.className = "ng"; document.getElementById("status-display").innerText = "NG";
         isLocked = true;
-        setTimeout(() => { 
-            document.getElementById("lock-overlay").style.display = "flex"; document.getElementById("pw-input").focus(); 
-        }, 500);
+        setTimeout(() => { document.getElementById("lock-overlay").style.display = "flex"; document.getElementById("pw-input").focus(); }, 600);
     }
 }
 
@@ -221,7 +200,7 @@ function unlock() {
         document.getElementById("lock-overlay").style.display = "none";
         document.getElementById("pw-input").value = "";
         document.body.className = ""; document.getElementById("status-display").innerText = "READY";
-    } else { alert("パスワード不一致"); document.getElementById("pw-input").value = ""; }
+    } else { alert("パスワード違います"); document.getElementById("pw-input").value = ""; }
 }
 
 function saveLog(res) {
@@ -231,11 +210,13 @@ function saveLog(res) {
     renderRecentLogs();
 }
 
+// ★修正：切り替え時の警告を強化
 function selectMasterFromPullDown() {
     const sel = document.getElementById("master-select");
     if (sel.value !== "") {
         const m = masters[parseInt(sel.value)];
-        if (confirm(`「${m.name}」に変更しますか？`)) {
+        // 【重要】警告文を詳細化
+        if (confirm(`照合対象を「${m.name}」に変更します。\nこれまでの読み取り枚数（${okCount}枚）もリセットされますが、よろしいですか？`)) {
             activeMaster = m;
             document.getElementById("target-info").innerText = activeMaster.name;
             isInterval = isProcessing = false; document.body.className = "";
@@ -247,7 +228,7 @@ function selectMasterFromPullDown() {
 }
 
 function renderMasters() {
-    let h = '<option value="" disabled selected>▼ マスター変更</option>';
+    let h = '<option value="" disabled selected>▼ 製品を選択してください</option>';
     h += masters.map((m, i) => `<option value="${i}">${m.name}</option>`).join("");
     document.getElementById("master-select").innerHTML = h;
 }
@@ -255,14 +236,9 @@ function renderMasters() {
 function registerNew() {
     const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
     const code = jsQR(img.data, img.width, img.height);
-    if (!code) return alert("QRを映してください");
-    
-    // マスター登録時も5文字以下は警告
-    if (code.data.length <= 5) {
-        if (!confirm("警告: このQRは5文字以下のため、検品時に無視されます。登録しますか？")) return;
-    }
-    
-    const name = prompt("品番/名前:");
+    if (!code) return alert("認識不可");
+    if (code.data.length < MIN_CHAR_LENGTH) { if (!confirm("5文字以下は検品で無視されますが登録しますか？")) return; }
+    const name = prompt("製品名:");
     if (name) { masters.push({name: name, code: code.data}); saveMasters(); }
 }
 
@@ -270,24 +246,17 @@ function saveMasters() { localStorage.setItem("kb_v19_masters", JSON.stringify(m
 function renderEditList() {
     document.getElementById("edit-list").innerHTML = masters.map((m, i) => `
         <div style="padding:15px; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
-            <b>${m.name}</b><button onclick="deleteMaster(${i})" style="color:red; background:none; border:2px solid red; padding:5px 10px; border-radius:5px;">削除</button>
+            <b>${m.name}</b><button onclick="deleteMaster(${i})" style="color:red; background:none; border:1px solid red; padding:5px 10px; border-radius:5px;">削除</button>
         </div>`).join("");
 }
 function deleteMaster(i) { if (confirm("削除？")) { masters.splice(i,1); saveMasters(); } }
 
 function renderRecentLogs() {
     const recent = logs.slice(-3).reverse();
-    document.getElementById("recent-logs").innerHTML = recent.map(l => `
-        <div class="log-item"><span><b style="color:${l.result==='OK'?'#28a745':'#dc3545'}">[${l.result}]</b> ${l.time}</span><span>${l.master}</span></div>
-    `).join("") || '<div style="color:#999; text-align:center; padding-top:40px;">履歴なし</div>';
+    document.getElementById("recent-logs").innerHTML = recent.map(l => `<div class="log-item"><span><b style="color:${l.result==='OK'?'#28a745':'#dc3545'}">[${l.result}]</b> ${l.time}</span><span>${l.master}</span></div>`).join("") || '<div style="color:#999; text-align:center; padding-top:40px;">履歴なし</div>';
 }
 
-function toggleModal(id) {
-    if (isLocked) return;
-    const m = document.getElementById(id);
-    m.style.display = (m.style.display === "flex") ? "none" : "flex";
-    if (id === "log-modal") renderAnalysis();
-}
+function toggleModal(id) { if (isLocked) return; const m = document.getElementById(id); m.style.display = (m.style.display === "flex") ? "none" : "flex"; if (id === "log-modal") renderAnalysis(); }
 
 function renderAnalysis() {
     const stats = {}; let tok = 0, tng = 0;
@@ -296,23 +265,26 @@ function renderAnalysis() {
         if (!stats[k]) stats[k] = { ok: 0, ng: 0 };
         if (l.result === "OK") { stats[k].ok++; tok++; } else { stats[k].ng++; tng++; }
     });
-    let h = `累計: OK ${tok} / NG ${tng}<hr><table style="width:100%; border-collapse:collapse;">`;
-    Object.keys(stats).reverse().forEach(k => {
-        const [d, m] = k.split("__");
-        h += `<tr style="border-bottom:1px solid #ddd;"><td style="padding:8px">${d}</td><td>${m}</td><td>${stats[k].ok}</td><td style="color:red">${stats[k].ng}</td></tr>`;
-    });
+    let h = `累計: OK ${tok} / NG ${tng}<hr><table style="width:100%; font-size:1rem;">`;
+    Object.keys(stats).reverse().forEach(k => { const [d, m] = k.split("__"); h += `<tr><td>${d}</td><td>${m}</td><td>OK:${stats[k].ok}</td><td style="color:red">NG:${stats[k].ng}</td></tr>`; });
     document.getElementById("summary-dashboard").innerHTML = h + `</table>`;
 }
 
-function clearLogs() { if (confirm("履歴リセット？")) { logs = []; localStorage.setItem("kb_v19_logs", "[]"); renderRecentLogs(); renderAnalysis(); } }
-function confirmFinish() { if (confirm("生産終了？")) { activeMaster = null; document.getElementById("target-info").innerText = "未選択"; resetCount(); } }
+function clearLogs() { if (confirm("履歴全削除？")) { logs = []; localStorage.setItem("kb_v19_logs", "[]"); renderRecentLogs(); renderAnalysis(); } }
+
+function confirmFinish() {
+    if (confirm("現在の生産を終了します。読み取り枚数もリセットされますがよろしいですか？")) {
+        activeMaster = null; document.getElementById("target-info").innerText = "未選択";
+        document.body.className = ""; document.getElementById("status-display").innerText = "READY";
+        resetCount();
+    }
+}
 function exportCSV() {
-    let csv = "日付,時間,マスター,結果\n";
+    let csv = "日付,時間,製品名,結果\n";
     logs.forEach(l => csv += `${l.date},${l.time},${l.master},${l.result}\n`);
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `report.csv`; a.click();
 }
-
 renderMasters(); renderEditList(); renderRecentLogs();
 </script>
 </body>
