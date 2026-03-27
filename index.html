@@ -139,6 +139,14 @@
     </div>
 
 <script>
+    // Service Workerの登録
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registered'))
+            .catch(err => console.log('Service Worker registration failed', err));
+    });
+}
 const UNLOCK_PASSWORD = "8181";
 const SCAN_INTERVAL_MS = 30000;
 const ANALYSIS_INTERVAL = 200; // QR解析を行う間隔（ミリ秒）: 200ms = 秒間5回
