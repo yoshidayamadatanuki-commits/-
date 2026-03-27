@@ -108,6 +108,7 @@
     <div class="btn-group">
         <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ マスター登録</button>
         <button class="btn-sub" onclick="toggleModal('log-modal')">📊 照合履歴</button>
+        <button onclick="triggerIphoneShortcut('管理者呼び出し')" style="background-color: #007AFF; color: white; border: none; padding: 10px; border-radius: 5px; width: 100%; margin-bottom: 10px; font-weight: bold;">🔔管理者呼び出し</button>
         <button class="btn-sub" onclick="confirmFinish()" style="background:#b40000;">■ 生産終了</button>
     </div>
 
@@ -448,7 +449,15 @@ function exportCSV() {
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
-
+// --- 追加：ショートカット呼び出し関数 ---
+function triggerIphoneShortcut(statusMessage) {
+    const shortcutName = encodeURIComponent("QR通知");
+    const text = encodeURIComponent(statusMessage || "照合完了！");
+    const url = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
+    
+    // 実行（一瞬画面が切り替わることがあります）
+    window.location.href = url;
+}
 renderMasters(); renderEditList(); renderRecentLogs();
 </script>
 </body>
