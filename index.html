@@ -147,7 +147,7 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.log('SW error', err));
     });
 }
-
+const UNLOCK_PASSWORD = "8181";
 const SCAN_INTERVAL_MS = 30000;
 const ANALYSIS_INTERVAL = 200; // QR解析を行う間隔（ミリ秒）: 200ms = 秒間5回
 
@@ -192,11 +192,9 @@ function playBeep(type) {
 let masters = JSON.parse(localStorage.getItem("kb_v19_masters")) || [];
 let logs = JSON.parse(localStorage.getItem("kb_v19_logs")) || [];
 let activeMaster = null;
-let UNLOCK_PASSWORD = localStorage.getItem("kb_password") || "8181";
 let isProcessing = false;
 let lastSeenQR = "";
 let seenCount = 0;
-let UNLOCK_PASSWORD = localStorage.getItem("kb_password") || "8181";
 
 async function startApp() {
     document.getElementById("start-overlay").style.display = "none";
@@ -355,43 +353,14 @@ function renderMasters() {
     document.getElementById("master-select").innerHTML = html;
 }
 
-function registerMaster() {
-    if (isLocked) return;
-    
-    // 選択メニューを出す
-    const mode = prompt("1: マスターをスキャンする\n2: パスワードを変更する\n番号を入力してください:");
-
-    if (mode === "2") {
-        changePassword(); // 下で作るパスワード変更機能を呼び出す
-    } else if (mode === "1") {
-        // 今までの登録スキャン処理
-        activeMaster = null;
-        document.getElementById("target-info").innerText = "スキャン待機中...";
-        document.getElementById("status-display").innerText = "SCAN";
-        document.body.className = "wait";
-    }
+function registerNew() {
+    const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+    const code = jsQR(img.data, img.width, img.height);
+    if (!code) return alert("QRをカメラに映してください");
+    const name = prompt("品番/製品名を入力:");
+    if (name) { masters.push({name: name, code: code.data}); saveMasters(); }
 }
 
-// そのすぐ下に、パスワード変更用の関数も貼り付けます
-function changePassword() {
-    const currentInput = prompt("現在のパスワードを入力してください:");
-    if (currentInput !== UNLOCK_PASSWORD) {
-        alert("パスワードが違います。");
-        return;
-    }
-
-    const newPass = prompt("新しいパスワードを入力してください:");
-    if (newPass && newPass.trim() !== "") {
-        if (confirm(`パスワードを「${newPass}」に変更しますか？`)) {
-            UNLOCK_PASSWORD = newPass;
-            localStorage.setItem("kb_password", newPass);
-            alert("変更完了しました。");
-        }
-    }
-}
-
-    
-    
 function saveMasters() {
     localStorage.setItem("kb_v19_masters", JSON.stringify(masters));
     renderMasters(); renderEditList();
@@ -448,7 +417,7 @@ function clearLogs() {
     if (input === null) return;
 
     // 直接パスワードを指定して判定
-    if (input === UNLOCK_PASSWORD) {
+    if (input === "8181") {
         if (confirm("本当に全ての履歴を削除しますか？")) {
             logs = [];
             localStorage.setItem("kb_v19_logs", "[]");
