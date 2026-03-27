@@ -416,7 +416,7 @@ function clearLogs() {
     // キャンセルされた場合は何もしない
     if (input === null) return;
 
-    // パスワードチェック（8181）
+    // 直接パスワードを指定して判定
     if (input === "8181") {
         if (confirm("本当に全ての履歴を削除しますか？")) {
             logs = [];
