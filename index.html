@@ -409,7 +409,22 @@ function renderAnalysis() {
     document.getElementById("full-log-list").innerHTML = logs.slice(-30).reverse().map(l => `<div style="padding:10px; border-bottom:1px solid #eee; font-size:1rem;">[${l.result}] ${l.date} ${l.time} - ${l.master}</div>`).join("");
 }
 
-function clearLogs() { if (confirm("履歴を削除しますか？")) { logs = []; localStorage.setItem("kb_v19_logs", "[]"); renderRecentLogs(); renderAnalysis(); } }
+function clearLogs(){
+    // パスワード入力を求める
+    const input = prompt("履歴を削除するにはパスワードを入力してください:");
+    
+    if (input === UNLOCK_PASSWORD) {
+        if (confirm("本当に全ての履歴を削除しますか？")) {
+            logs = [];
+            localStorage.setItem("kb_v19_logs", "[]");
+            renderRecentLogs();
+            renderAnalysis();
+            alert("履歴を削除しました。");
+        }
+    } else if (input !== null) {
+        alert("パスワードが違います。");
+    }
+}
 
 function confirmFinish() {
     if (isLocked) return;
