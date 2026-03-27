@@ -192,6 +192,7 @@ function playBeep(type) {
 let masters = JSON.parse(localStorage.getItem("kb_v19_masters")) || [];
 let logs = JSON.parse(localStorage.getItem("kb_v19_logs")) || [];
 let activeMaster = null;
+let UNLOCK_PASSWORD = localStorage.getItem("kb_password") || "8181";
 let isProcessing = false;
 let lastSeenQR = "";
 let seenCount = 0;
@@ -357,19 +358,21 @@ function renderMasters() {
 function registerMaster() {
     if (isLocked) return;
     
-    // 選択肢を出す
+    // 選択メニューを出す
     const mode = prompt("1: マスターをスキャンする\n2: パスワードを変更する\n番号を入力してください:");
 
     if (mode === "2") {
-        changePassword(); // この後で作る関数を呼び出す
+        changePassword(); // 下で作るパスワード変更機能を呼び出す
     } else if (mode === "1") {
-        // 今までの登録処理
+        // 今までの登録スキャン処理
         activeMaster = null;
         document.getElementById("target-info").innerText = "スキャン待機中...";
         document.getElementById("status-display").innerText = "SCAN";
         document.body.className = "wait";
     }
 }
+
+// そのすぐ下に、パスワード変更用の関数も貼り付けます
 function changePassword() {
     const currentInput = prompt("現在のパスワードを入力してください:");
     if (currentInput !== UNLOCK_PASSWORD) {
@@ -381,11 +384,12 @@ function changePassword() {
     if (newPass && newPass.trim() !== "") {
         if (confirm(`パスワードを「${newPass}」に変更しますか？`)) {
             UNLOCK_PASSWORD = newPass;
-            localStorage.setItem("kb_password", newPass); // ブラウザに保存
+            localStorage.setItem("kb_password", newPass);
             alert("変更完了しました。");
         }
     }
 }
+
     
     
 function saveMasters() {
