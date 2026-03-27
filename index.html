@@ -409,11 +409,15 @@ function renderAnalysis() {
     document.getElementById("full-log-list").innerHTML = logs.slice(-30).reverse().map(l => `<div style="padding:10px; border-bottom:1px solid #eee; font-size:1rem;">[${l.result}] ${l.date} ${l.time} - ${l.master}</div>`).join("");
 }
 
-function clearLogs(){
+function clearLogs() {
     // パスワード入力を求める
     const input = prompt("履歴を削除するにはパスワードを入力してください:");
     
-    if (input === UNLOCK_PASSWORD) {
+    // キャンセルされた場合は何もしない
+    if (input === null) return;
+
+    // パスワードチェック（8181）
+    if (input === "8181") {
         if (confirm("本当に全ての履歴を削除しますか？")) {
             logs = [];
             localStorage.setItem("kb_v19_logs", "[]");
@@ -421,7 +425,7 @@ function clearLogs(){
             renderAnalysis();
             alert("履歴を削除しました。");
         }
-    } else if (input !== null) {
+    } else {
         alert("パスワードが違います。");
     }
 }
