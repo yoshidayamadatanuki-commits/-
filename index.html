@@ -195,6 +195,7 @@ let activeMaster = null;
 let isProcessing = false;
 let lastSeenQR = "";
 let seenCount = 0;
+let UNLOCK_PASSWORD = localStorage.getItem("kb_password") || "8181";
 
 async function startApp() {
     document.getElementById("start-overlay").style.display = "none";
@@ -356,23 +357,19 @@ function renderMasters() {
 function registerMaster() {
     if (isLocked) return;
     
-    // 選択肢を表示
-    const mode = prompt("1: マスターをスキャンする\n2: パスワードを変更する\n番号を入力してください（キャンセルは空欄）:");
+    // 選択肢を出す
+    const mode = prompt("1: マスターをスキャンする\n2: パスワードを変更する\n番号を入力してください:");
 
     if (mode === "2") {
-        changePassword(); // パスワード変更関数へ
-        return;
+        changePassword(); // この後で作る関数を呼び出す
     } else if (mode === "1") {
-        // 通常のマスター登録スキャン開始
+        // 今までの登録処理
         activeMaster = null;
         document.getElementById("target-info").innerText = "スキャン待機中...";
         document.getElementById("status-display").innerText = "SCAN";
         document.body.className = "wait";
     }
 }
-// パスワードをLocalStorageから取得（初期値 8181）
-let UNLOCK_PASSWORD = localStorage.getItem("kb_password") || "8181";
-
 function changePassword() {
     const currentInput = prompt("現在のパスワードを入力してください:");
     if (currentInput !== UNLOCK_PASSWORD) {
@@ -380,17 +377,16 @@ function changePassword() {
         return;
     }
 
-    const newPass = prompt("新しいパスワードを入力してください（空欄不可）:");
+    const newPass = prompt("新しいパスワードを入力してください:");
     if (newPass && newPass.trim() !== "") {
         if (confirm(`パスワードを「${newPass}」に変更しますか？`)) {
             UNLOCK_PASSWORD = newPass;
             localStorage.setItem("kb_password", newPass); // ブラウザに保存
-            alert("変更完了しました。新しいパスワードは " + newPass + " です。");
+            alert("変更完了しました。");
         }
-    } else {
-        alert("キャンセルまたは無効な入力です。");
     }
 }
+    
     
 function saveMasters() {
     localStorage.setItem("kb_v19_masters", JSON.stringify(masters));
@@ -448,7 +444,7 @@ function clearLogs() {
     if (input === null) return;
 
     // 直接パスワードを指定して判定
-    if (input === "8181") {
+    if (input === UNLOCK_PASSWORD) {
         if (confirm("本当に全ての履歴を削除しますか？")) {
             logs = [];
             localStorage.setItem("kb_v19_logs", "[]");
