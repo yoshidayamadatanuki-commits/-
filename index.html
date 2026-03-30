@@ -451,29 +451,37 @@ function exportCSV() {
 }
 // --- 通知 ＋ 画面ロック関数 ---
 function triggerIphoneShortcut(statusMessage) {
-    // 1. iPhoneショートカットを起動（通知）
+    // 1. 通知を飛ばす
     const shortcutName = encodeURIComponent("QR通知");
-    const text = encodeURIComponent(statusMessage || "管理者の確認が必要です！");
-    const url = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
-    
-    // 通知を実行
-    window.location.href = url;
+    const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
+    window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // 2. 画面ロックを発動（ブラウザに戻ったタイミングで開始）
+    // 2. 画面をロック表示に切り替えてパスワードを求める
     setTimeout(() => {
+        const overlay = document.getElementById("admin-lock-overlay");
+        overlay.style.display = "flex"; // 黒い画面を表示
+
         let pass = "";
-        // パスワード「8181」が入力されるまでループ
         while (pass !== "8181") {
-            pass = prompt("【⚠️現場ロック中】\n管理者が確認し、解除パスワードを入力してください：");
-            
-            // キャンセル（null）を押されてもループを維持
-            if (pass === null) {
-                pass = "";
-            }
+            pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
+            if (pass === null) pass = ""; 
         }
-        alert("ロックを解除しました。作業を再開してください。");
-    }, 1000); 
+
+        overlay.style.display = "none"; // 解除
+        alert("ロックを解除しました。");
+    }, 1000);
+}
 }renderMasters(); renderEditList(); renderRecentLogs();
 </script>
+<div id="admin-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 999999; text-align: center; display: none; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif;">
+    <div style="padding: 20px;">
+        <h1 style="color: #ffc107; font-size: 2.5rem; margin-bottom: 20px;">⚠️ 管理者呼び出し中</h1>
+        <p style="font-size: 1.5rem; line-height: 1.6;">
+            管理者が来るまで<br>
+            <span style="color: #f44336; font-weight: bold;">作業を中断すること</span>
+        </p>
+        <p style="margin-top: 50px; color: #888;">(管理者が解除パスワードを入力してください)</p>
+    </div>
+</div>
 </body>
 </html>
