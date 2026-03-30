@@ -450,15 +450,16 @@ function exportCSV() {
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
 // --- 通知 ＋ 画面ロック関数 ---
-// --- triggerIphoneShortcut 関数 ---
 function triggerIphoneShortcut(statusMessage) {
+    // 1. ショートカットを起動（通知とメモ表示はショートカットが担当）
     const shortcutName = encodeURIComponent("QR通知");
     const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
+    // 2. 戻ってきた時にロックがかかっているようにする
     setTimeout(() => {
         const overlay = document.getElementById("admin-lock-overlay");
-        overlay.style.display = "flex";
+        if (overlay) overlay.style.display = "flex"; // 黒い警告画面を出す
 
         let pass = "";
         while (pass !== "8181") {
@@ -466,7 +467,7 @@ function triggerIphoneShortcut(statusMessage) {
             if (pass === null) pass = ""; 
         }
 
-        overlay.style.display = "none";
+        if (overlay) overlay.style.display = "none";
         alert("ロックを解除しました。");
     }, 1000);
 }
