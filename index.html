@@ -449,16 +449,31 @@ function exportCSV() {
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
-// --- 追加：ショートカット呼び出し関数 ---
+// --- 通知 ＋ 画面ロック関数 ---
 function triggerIphoneShortcut(statusMessage) {
+    // 1. iPhoneショートカットを起動（通知）
     const shortcutName = encodeURIComponent("QR通知");
-    const text = encodeURIComponent(statusMessage || "照合完了！");
+    const text = encodeURIComponent(statusMessage || "管理者の確認が必要です！");
     const url = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
     
-    // 実行（一瞬画面が切り替わることがあります）
+    // 通知を実行
     window.location.href = url;
-}
-renderMasters(); renderEditList(); renderRecentLogs();
+
+    // 2. 画面ロックを発動（ブラウザに戻ったタイミングで開始）
+    setTimeout(() => {
+        let pass = "";
+        // パスワード「8181」が入力されるまでループ
+        while (pass !== "8181") {
+            pass = prompt("【⚠️現場ロック中】\n管理者が確認し、解除パスワードを入力してください：");
+            
+            // キャンセル（null）を押されてもループを維持
+            if (pass === null) {
+                pass = "";
+            }
+        }
+        alert("ロックを解除しました。作業を再開してください。");
+    }, 1000); 
+}renderMasters(); renderEditList(); renderRecentLogs();
 </script>
 </body>
 </html>
