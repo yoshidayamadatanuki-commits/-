@@ -450,16 +450,15 @@ function exportCSV() {
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
 // --- 通知 ＋ 画面ロック関数 ---
+// --- triggerIphoneShortcut 関数 ---
 function triggerIphoneShortcut(statusMessage) {
-    // 1. 通知を飛ばす
     const shortcutName = encodeURIComponent("QR通知");
     const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // 2. 画面をロック表示に切り替えてパスワードを求める
     setTimeout(() => {
         const overlay = document.getElementById("admin-lock-overlay");
-        overlay.style.display = "flex"; // 黒い画面を表示
+        overlay.style.display = "flex";
 
         let pass = "";
         while (pass !== "8181") {
@@ -467,13 +466,18 @@ function triggerIphoneShortcut(statusMessage) {
             if (pass === null) pass = ""; 
         }
 
-        overlay.style.display = "none"; // 解除
+        overlay.style.display = "none";
         alert("ロックを解除しました。");
     }, 1000);
 }
-}renderMasters(); renderEditList(); renderRecentLogs();
+
+// ページ読み込み時の初期化
+renderMasters(); 
+renderEditList(); 
+renderRecentLogs();
 </script>
-<div id="admin-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 999999; text-align: center; display: none; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif;">
+
+<div id="admin-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 999999; text-align: center; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif;">
     <div style="padding: 20px;">
         <h1 style="color: #ffc107; font-size: 2.5rem; margin-bottom: 20px;">⚠️ 管理者呼び出し中</h1>
         <p style="font-size: 1.5rem; line-height: 1.6;">
