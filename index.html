@@ -449,35 +449,45 @@ function exportCSV() {
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
-// --- 通知 ＋ 画面ロック関数 ---
 function triggerIphoneShortcut(statusMessage) {
-    // --- 追加：呼び出し時間をログに記録 ---
-    const now = new Date();
-    const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-    const dateStr = (now.getMonth() + 1) + "/" + now.getDate();
-    
-    // ログデータを作成して保存（マスター名のところに「【呼び出し】」と入れます）
-    const callLog = {
-        date: dateStr,
-        time: timeStr,
-        master: "⚠️管理者呼び出し",
-        result: "CALL"
-    };
-    
-    logs.unshift(callLog); // 履歴の先頭に追加
-    localStorage.setItem("kb_v19_logs", JSON.stringify(logs)); // 保存
-    renderRecentLogs(); // 画面の履歴一覧を更新
-    // ------------------------------------
+    // 1. ログを記録（履歴に表示させるための処理）
+    try {
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        const dateStr = (now.getMonth() + 1) + "/" + now.getDate();
+        
+        const callLog = {
+            date: dateStr,
+            time: timeStr,
+            master: "⚠️管理者呼び出し", // 履歴にこの文字が出る
+            result: "CALL"
+        };
+        
+        // logs配列の先頭に追加
+        logs.unshift(callLog);
+        
+        // ローカルストレージに保存（保存名は既存のコードに合わせて kb_v19_logs としています）
+        localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
+        
+        // 【重要】画面の履歴一覧を即座に更新する
+        if (typeof renderRecentLogs === "function") {
+            renderRecentLogs();
+        }
+    } catch (e) {
+        console.error("Log error:", e);
+    }
 
-    // 1. ショートカットを起動（通知とメモ表示）
+    // 2. iPhoneショートカットを起動
     const shortcutName = encodeURIComponent("QR通知");
     const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // 2. 戻ってきた時にロック
+    // 3. 画面ロック
     setTimeout(() => {
         const overlay = document.getElementById("admin-lock-overlay");
-        if (overlay) overlay.style.display = "flex";
+        if (overlay) {
+            overlay.style.display = "flex";
+        }
 
         let pass = "";
         while (pass !== "8181") {
@@ -485,7 +495,9 @@ function triggerIphoneShortcut(statusMessage) {
             if (pass === null) pass = ""; 
         }
 
-        if (overlay) overlay.style.display = "none";
+        if (overlay) {
+            overlay.style.display = "none";
+        }
         alert("ロックを解除しました。");
     }, 1000);
 }
