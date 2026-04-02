@@ -328,17 +328,19 @@ function updateStatus(ok) {
             }, SCAN_INTERVAL_MS);
             
         }, 1200);
-
-    } else {
+} else {
         document.body.className = "ng";
         document.getElementById("status-display").innerText = "NG";
         isLocked = true;
+
+        // ★【追記】NGになった瞬間に管理者へ通知を飛ばす
+        callAdmin("NG通知：未登録のQRコードを検知しました");
+
         setTimeout(() => {
             document.getElementById("lock-overlay").style.display = "flex";
             document.getElementById("pw-input").focus();
         }, 500);
     }
-}
 
 function updateCountDisplay() {
     document.getElementById("count-display").innerText = `かんばん照合数: ${okCount} 枚`;
@@ -517,9 +519,10 @@ function triggerIphoneShortcut(statusMessage) {
         console.error("Log error:", e);
     }
 
-    // 2. iPhoneショートカットを起動
+function callAdmin(msg) { // msgを受け取れるように変更
+    const statusMessage = msg || "管理者を呼んでいます"; // msgがあれば使い、なければデフォルト
     const shortcutName = encodeURIComponent("QR通知");
-    const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
+    const text = encodeURIComponent(statusMessage); // 渡された内容を送信
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
     // 3. 画面ロック
@@ -531,7 +534,8 @@ function triggerIphoneShortcut(statusMessage) {
 
         let pass = "";
         while (pass !== "8181") {
-            pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
+            // プロンプトに通知内容を表示するように変更
+            pass = prompt(statusMessage + "\n管理者の解除パスワードを入力してください：");
             if (pass === null) pass = ""; 
         }
 
