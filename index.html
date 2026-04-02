@@ -46,45 +46,46 @@
         .log-display-area { background: #fff; color: #333; height: 115px; overflow: hidden; padding: 0 20px; border-bottom: 1px solid #ddd; }
         .log-item { padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
 
-/* --- 修正：全体を包む白いパネル --- */
+/* --- 修正：プルダウンとボタンをまとめる白いパネル --- */
 .main-panel {
     background-color: #ffffff;
     width: 95%;
     margin: 10px auto;
     border-radius: 15px;
-    padding-bottom: 5px; /* 下側の余白 */
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    overflow: hidden; /* はみ出しをカット */
+    overflow: hidden; /* 中身の角が丸みからはみ出すのを防ぐ */
 }
 
-/* マスター情報エリアの微調整 */
-.master-info {
-    background-color: #ffffff;
-    padding: 15px;
-    border-bottom: 1px solid #eee; /* ボタンとの境界線（お好みで） */
-    margin: 0; /* マージンをゼロにして密着させる */
+/* プルダウン部分：背景を透明にしてパネルに馴染ませる */
+.master-panel {
+    padding: 15px 15px 0 15px; /* 下側の余白を詰める */
+    background: transparent;
 }
 
-/* ボタンエリア：2列でパネル内に配置 */
+#master-select {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+/* ボタン群：背景を透明にしてプルダウンと密着させる */
 .btn-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     padding: 15px;
-    background: #ffffff; /* パネルと同じ白 */
+    background: transparent; /* ここが重要：白を重ねない */
 }
 
-/* ボタンの高さと形を統一 */
 .btn-main, .btn-sub {
     width: 100%;
     height: 60px;
     border: none;
     border-radius: 10px;
-    font-size: 15px;
     font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 /* ★追加：btn-main と btn-sub の標準色（ファイル内の既存設定に合わせる） */
@@ -145,15 +146,22 @@
     <div class="log-display-area" id="recent-logs"></div>
 <div class="main-panel">
 
-    <div class="master-info" id="master-display">
-        </div>
-<div class="btn-group">
-    <button class="btn-main" onclick="toggleModal('mgmt-modal')" style="background: #007bff; color: white;">⚙️ マスター登録</button>
-    <button class="btn-sub" onclick="toggleModal('log-modal')" style="background: #6c757d; color: white;">📊 照合履歴</button>
+<div class="master-panel">
+        <select id="master-select" onchange="selectMasterFromPullDown()">
+            <option value="" disabled selected>▼ マスター変更</option>
+        </select>
+    </div>
 
-    <button class="btn-main" onclick="triggerIphoneShortcut('管理者を呼ぶ')" style="background: #ffc107; color: black;">🔔 管理者を呼ぶ</button>
-    <button class="btn-sub" onclick="confirmFinish()" style="background: #b40000; color: white;">■ 生産終了</button>
-</div>
+    <div class="master-info" id="master-display" style="border:none; padding-top:5px;">
+        <div id="master-content" style="background:#f0f0f0; padding:10px; border-radius:5px; font-size:14px;">-- 読み込み中 --</div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn-main" onclick="toggleModal('mgmt-modal')" style="background: #007bff; color: white;">⚙️ マスター登録</button>
+        <button class="btn-sub" onclick="toggleModal('log-modal')" style="background: #6c757d; color: white;">📊 照合履歴</button>
+        <button class="btn-main" onclick="triggerIphoneShortcut('管理者を呼ぶ')" style="background: #ffc107; color: black;">🔔 管理者を呼ぶ</button>
+        <button class="btn-sub" onclick="confirmFinish()" style="background: #b40000; color: white;">■ 生産終了</button>
+    </div>
 
     <div id="mgmt-modal" class="modal">
         <div class="modal-content">
