@@ -325,17 +325,16 @@ function updateStatus(ok) {
                 isInterval = false;
                 document.body.className = "";
                 document.getElementById("status-display").innerText = "READY";
-}, SCAN_INTERVAL_MS);
+            }, SCAN_INTERVAL_MS);
             
         }, 1200);
-    } // ← ここに必ず追加してください
-
-} else {
+    } else {
+        // NGの時の処理
         document.body.className = "ng";
         document.getElementById("status-display").innerText = "NG";
         isLocked = true;
 
-        // ★【追記】NGになった瞬間に管理者へ通知を飛ばす
+        // 管理者へ通知を飛ばす
         callAdmin("NG通知：未登録のQRコードを検知しました");
 
         setTimeout(() => {
@@ -343,7 +342,8 @@ function updateStatus(ok) {
             document.getElementById("pw-input").focus();
         }, 500);
     }
-
+}
+    
 function updateCountDisplay() {
     document.getElementById("count-display").innerText = `かんばん照合数: ${okCount} 枚`;
 }
@@ -494,7 +494,6 @@ function exportCSV() {
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
 function triggerIphoneShortcut(statusMessage) {
-    // 1. ログを記録（履歴に表示させるための処理）
     try {
         const now = new Date();
         const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
@@ -503,24 +502,20 @@ function triggerIphoneShortcut(statusMessage) {
         const callLog = {
             date: dateStr,
             time: timeStr,
-            master: "⚠️管理者呼び出し", // 履歴にこの文字が出る
+            master: "⚠️管理者呼び出し",
             result: "CALL"
         };
         
-        // logs配列の先頭に追加
         logs.unshift(callLog);
-        
-        // ローカルストレージに保存（保存名は既存のコードに合わせて kb_v19_logs としています）
         localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
         
-        // 【重要】画面の履歴一覧を即座に更新する
         if (typeof renderRecentLogs === "function") {
             renderRecentLogs();
         }
-   } catch (e) {
+    } catch (e) {
         console.error("Log error:", e);
     }
-} // ← ここに必ず追加してください
+}
 
 function callAdmin(msg) {
     const statusMessage = msg || "管理者を呼んでいます";
@@ -528,7 +523,7 @@ function callAdmin(msg) {
     const text = encodeURIComponent(statusMessage);
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // 画面ロック
+    // 画面ロック処理
     setTimeout(() => {
         const overlay = document.getElementById("admin-lock-overlay");
         if (overlay) {
