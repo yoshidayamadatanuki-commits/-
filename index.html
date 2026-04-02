@@ -47,24 +47,36 @@
         .log-item { padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
 
 .btn-group {
-    display: grid;           /* 横並びのグリッド形式 */
-    grid-template-columns: 1fr 1fr; /* 50%ずつ2列に分ける */
-    gap: 12px;               /* ボタン同士の隙間 */
-    width: 95%;              /* 画面幅いっぱいに広げる */
-    margin: 20px auto;       /* 上下に余白を作り、左右中央に配置 */
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2列 */
+    gap: 12px;
+    width: 95%;
+    margin: 20px auto;
+    /* ★修正：ボタンエリア全体の背景を白にし、余白を作る */
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 12px; /* 少し角を丸く */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* 少し浮き上がらせる */
 }
 
-/* ボタン共通の土台設定 */
+/* ボタン共通の土台設定（色は白にしない） */
 .btn-main, .btn-sub {
-    width: 100%;             /* グリッドの枠いっぱいに広げる */
-    padding: 18px 5px;       /* 押しやすいように縦に厚みをもたせる */
-    border: none;
-    border-radius: 10px;     /* 角を少し丸く */
-    font-size: 14px;         /* 2つ並びなので少し文字を調整 */
+    width: 100%;
+    padding: 18px 5px;
+    /* background-color: #ffffff; は指定しない */
+    color: #ffffff;           /* 文字は白（黒は見づらいため） */
+    border: none;             /* 縁取りもなし */
+    border-radius: 10px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 少し浮き上がらせる */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+/* ★追加：btn-main と btn-sub の標準色（ファイル内の既存設定に合わせる） */
+/* もしファイル内に既に定義があれば不要ですが、確実にするため記述します */
+.btn-main { background-color: #007bff; } /* 例：青 */
+.btn-sub { background-color: #6c757d; }  /* 例：グレー */
         /* NGロック用オーバーレイ */
         #lock-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
