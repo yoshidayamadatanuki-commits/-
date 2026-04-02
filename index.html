@@ -299,6 +299,10 @@ function tick() {
                         playBeep(ok ? "ok" : "ng");
                         updateStatus(ok);
                         saveLog(ok ? "OK" : "NG");
+                        if (!ok) {
+                // 不一致（NG）の場合、自動的に管理者を呼ぶ
+                callAdmin(`QR不一致を検知: スキャン値[${code.data}]`);
+            }
                         seenCount = 0; lastSeenQR = "";
                     }
                 }
