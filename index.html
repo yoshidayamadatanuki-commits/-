@@ -330,16 +330,13 @@ function updateStatus(ok) {
         }, 1200);
 
     } else {
-        // --- NG時の自動処理 ---
         document.body.className = "ng";
         document.getElementById("status-display").innerText = "NG";
-        
-        // 画面ロックフラグを立てる
         isLocked = true;
-
-        // 管理者呼び出し関数を実行（通知ショートカット ＋ パスワードロック）
-        // 引数にメッセージを渡すことで、通知内容が分かりやすくなります
-        callAdmin("QR不一致による自動停止");
+        setTimeout(() => {
+            document.getElementById("lock-overlay").style.display = "flex";
+            document.getElementById("pw-input").focus();
+        }, 500);
     }
 }
 
