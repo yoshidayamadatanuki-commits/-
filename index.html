@@ -520,6 +520,7 @@ function triggerIphoneShortcut(statusMessage) {
 console.error("Log error:", e);
     }
 }
+    
 function callAdmin(msg) { // msgを受け取れるように変更
     const statusMessage = msg || "管理者を呼んでいます"; // msgがあれば使い、なければデフォルト
     const shortcutName = encodeURIComponent("QR通知");
