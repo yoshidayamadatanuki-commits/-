@@ -290,18 +290,26 @@ function tick() {
             const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
             
-            if (code && code.data.trim() !== "") {
-                if (code.data === lastSeenQR) { seenCount++; } else { lastSeenQR = code.data; seenCount = 1; }
-                if (seenCount >= 2) {
-                    if (!isProcessing && !isLocked && !isInterval && activeMaster && document.getElementById("mgmt-modal").style.display !== "flex") {
-                        isProcessing = true;
-                        const ok = (code.data === activeMaster.code);
-                        playBeep(ok ? "ok" : "ng");
-                        updateStatus(ok);
-                        saveLog(ok ? "OK" : "NG");
-                        seenCount = 0; lastSeenQR = "";
-                    }
-                }
+if (code && code.data.trim() !== "") {
+    if (code.data === lastSeenQR) { seenCount++; } else { lastSeenQR = code.data; seenCount = 1; }
+    if (seenCount >= 2) {
+        if (!isProcessing && !isLocked && !isInterval && activeMaster && document.getElementById("mgmt-modal").style.display !== "flex") {
+            isProcessing = true;
+            const ok = (code.data === activeMaster.code);
+            
+            playBeep(ok ? "ok" : "ng");
+            updateStatus(ok);
+            saveLog(ok ? "OK" : "NG");
+
+            // ★ここを追加：不一致（NG）の時に管理者呼び出しを実行
+            if (!ok) {
+                callAdmin("QR不一致を検知しました");
+            }
+
+            seenCount = 0; lastSeenQR = "";
+        }
+    }
+}
             } else { seenCount = 0; lastSeenQR = ""; }
         }
     }
@@ -517,10 +525,15 @@ function triggerIphoneShortcut(statusMessage) {
         console.error("Log error:", e);
     }
 
-    // 2. iPhoneショートカットを起動
+function callAdmin(statusMessage) {
+    // 1. ビープ音
+    playBeep("ng");
+
+    // 2. iPhoneショートカットを起動 (ここを修正)
     const shortcutName = encodeURIComponent("QR通知");
     const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
-    window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
+    // inputパラメータをtext一つに絞ります
+    window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=${text}`;
 
     // 3. 画面ロック
     setTimeout(() => {
@@ -531,7 +544,7 @@ function triggerIphoneShortcut(statusMessage) {
 
         let pass = "";
         while (pass !== "8181") {
-            pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
+            pass = prompt("【NG発生】\n管理者が解除するまで操作できません。\nパスワードを入力してください：");
             if (pass === null) pass = ""; 
         }
 
@@ -539,7 +552,7 @@ function triggerIphoneShortcut(statusMessage) {
             overlay.style.display = "none";
         }
         alert("ロックを解除しました。");
-    }, 1000);
+    }, 500);
 }
 
 // ページ読み込み時の初期化
