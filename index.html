@@ -523,12 +523,12 @@ function triggerIphoneShortcut(statusMessage) {
 } // ← ここに必ず追加してください
 
 function callAdmin(msg) {
-    const statusMessage = msg || "管理者を呼んでいます"; // msgがあれば使い、なければデフォルト
+    const statusMessage = msg || "管理者を呼んでいます";
     const shortcutName = encodeURIComponent("QR通知");
-    const text = encodeURIComponent(statusMessage); // 渡された内容を送信
+    const text = encodeURIComponent(statusMessage);
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // 3. 画面ロック
+    // 画面ロック
     setTimeout(() => {
         const overlay = document.getElementById("admin-lock-overlay");
         if (overlay) {
@@ -537,7 +537,6 @@ function callAdmin(msg) {
 
         let pass = "";
         while (pass !== "8181") {
-            // プロンプトに通知内容を表示するように変更
             pass = prompt(statusMessage + "\n管理者の解除パスワードを入力してください：");
             if (pass === null) pass = ""; 
         }
