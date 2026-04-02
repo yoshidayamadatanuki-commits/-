@@ -47,11 +47,26 @@
         .log-item { padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
 
         /* ボタン群 */
-        .btn-group { background:#fff; padding: 8px 10px calc(5px + var(--safe-area-bottom)); display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; }
-        button { padding: 20px 5px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; font-size: 1.1rem; }
-        .btn-main { background:#007bff; color:white; }
-        .btn-sub { background:#555; color:white; }
-        
+.btn-group {
+    display: flex;
+    flex-direction: column; /* ボタンを縦に並べる */
+    align-items: center;    /* 中央に寄せる */
+    gap: 10px;              /* ボタン同士の隙間を空ける */
+    width: 100%;            /* グループ全体の幅を最大に */
+    margin: 20px 0;         /* 前後の余白 */
+}
+
+/* ボタン共通の土台設定 */
+.btn-main, .btn-sub {
+    width: 90%;             /* 画面の90%の幅にする（少し余白を残す） */
+    max-width: 400px;       /* 横長になりすぎないように制限 */
+    padding: 15px;          /* 押しやすいように厚みを出す */
+    border: none;
+    border-radius: 8px;     /* 角を丸く */
+    font-size: 16px;        /* 文字を大きく */
+    font-weight: bold;
+    cursor: pointer;
+}
         /* NGロック用オーバーレイ */
         #lock-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
