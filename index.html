@@ -46,35 +46,36 @@
         .log-display-area { background: #fff; color: #333; height: 115px; overflow: hidden; padding: 0 20px; border-bottom: 1px solid #ddd; }
         .log-item { padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
 
-/* ボタンを囲む白いエリアの設定 */
+/* ボタンを囲む白いエリア */
 .btn-group {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* 2列にする */
-    gap: 10px;                     /* ボタン間の隙間 */
-    width: 90%;                    /* 画面幅に対する広さ */
-    margin: 20px auto;             /* 上下に余白を作り中央寄せ */
-    padding: 15px;                 /* 白いエリアの内側の余白 */
-    background-color: #ffffff;     /* ★背景を白にする */
-    border-radius: 15px;           /* 角を丸くする */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* 軽い影をつけて浮かせる */
-    box-sizing: border-box;        /* サイズ計算を正確にする */
+    grid-template-columns: 1fr 1fr; /* 2列 */
+    gap: 12px;
+    width: 92%;
+    margin: 20px auto;
+    padding: 15px;
+    background-color: #ffffff;      /* ★ここを白にする */
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    position: relative;             /* 配置を安定させる */
+    overflow: hidden;               /* はみ出しをカット */
 }
 
-/* ボタン自体の共通設定 */
+/* ボタン自体の設定 */
 .btn-main, .btn-sub {
-    width: 100%;                   /* 2列の枠いっぱいに広げる */
-    height: 60px;                  /* 高さを統一してズレを防ぐ */
+    width: 100%;
+    height: 60px;
     border: none;
     border-radius: 10px;
     font-size: 15px;
     font-weight: bold;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    cursor: pointer;
+    margin: 0;                      /* 余計なマージンを消す */
 }
-
 /* ★追加：btn-main と btn-sub の標準色（ファイル内の既存設定に合わせる） */
 /* もしファイル内に既に定義があれば不要ですが、確実にするため記述します */
 .btn-main { background-color: #007bff; } /* 例：青 */
