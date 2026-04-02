@@ -325,10 +325,10 @@ function updateStatus(ok) {
                 isInterval = false;
                 document.body.className = "";
                 document.getElementById("status-display").innerText = "READY";
-            }, SCAN_INTERVAL_MS);
+}, SCAN_INTERVAL_MS);
             
-}, 1200);
-    } // ← これを追加
+        }, 1200);
+    } // ← ここに必ず追加してください
 
 } else {
         document.body.className = "ng";
@@ -517,12 +517,12 @@ function triggerIphoneShortcut(statusMessage) {
         if (typeof renderRecentLogs === "function") {
             renderRecentLogs();
         }
-    } catch (e) {
-console.error("Log error:", e);
+   } catch (e) {
+        console.error("Log error:", e);
     }
-}
-    
-function callAdmin(msg) { // msgを受け取れるように変更
+} // ← ここに必ず追加してください
+
+function callAdmin(msg) {
     const statusMessage = msg || "管理者を呼んでいます"; // msgがあれば使い、なければデフォルト
     const shortcutName = encodeURIComponent("QR通知");
     const text = encodeURIComponent(statusMessage); // 渡された内容を送信
