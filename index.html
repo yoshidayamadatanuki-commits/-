@@ -46,31 +46,33 @@
         .log-display-area { background: #fff; color: #333; height: 115px; overflow: hidden; padding: 0 20px; border-bottom: 1px solid #ddd; }
         .log-item { padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
 
+/* ボタンを囲む白いエリアの設定 */
 .btn-group {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* 2列 */
-    gap: 12px;
-    width: 95%;
-    margin: 20px auto;
-    /* ★修正：ボタンエリア全体の背景を白にし、余白を作る */
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 12px; /* 少し角を丸く */
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* 少し浮き上がらせる */
+    grid-template-columns: 1fr 1fr; /* 2列にする */
+    gap: 10px;                     /* ボタン間の隙間 */
+    width: 90%;                    /* 画面幅に対する広さ */
+    margin: 20px auto;             /* 上下に余白を作り中央寄せ */
+    padding: 15px;                 /* 白いエリアの内側の余白 */
+    background-color: #ffffff;     /* ★背景を白にする */
+    border-radius: 15px;           /* 角を丸くする */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* 軽い影をつけて浮かせる */
+    box-sizing: border-box;        /* サイズ計算を正確にする */
 }
 
-/* ボタン共通の土台設定（色は白にしない） */
+/* ボタン自体の共通設定 */
 .btn-main, .btn-sub {
-    width: 100%;
-    padding: 18px 5px;
-    /* background-color: #ffffff; は指定しない */
-    color: #ffffff;           /* 文字は白（黒は見づらいため） */
-    border: none;             /* 縁取りもなし */
+    width: 100%;                   /* 2列の枠いっぱいに広げる */
+    height: 60px;                  /* 高さを統一してズレを防ぐ */
+    border: none;
     border-radius: 10px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 /* ★追加：btn-main と btn-sub の標準色（ファイル内の既存設定に合わせる） */
@@ -130,12 +132,13 @@
 
     <div class="log-display-area" id="recent-logs"></div>
 
-    <div class="btn-group">
-        <button class="btn-main" onclick="toggleModal('mgmt-modal')">⚙ マスター登録</button>
-        <button class="btn-sub" onclick="toggleModal('log-modal')">📊 照合履歴</button>
-　　　　<button class="btn-main" onclick="triggerIphoneShortcut('管理者を呼ぶ')" style="background: #ffc107; color: black;">🔔 管理者を呼ぶ</button>
-        <button class="btn-sub" onclick="confirmFinish()" style="background:#b40000;">■ 生産終了</button>
-    </div>
+<div class="btn-group">
+    <button class="btn-main" onclick="toggleModal('mgmt-modal')" style="background: #007bff; color: white;">⚙️ マスター登録</button>
+    <button class="btn-sub" onclick="toggleModal('log-modal')" style="background: #6c757d; color: white;">📊 照合履歴</button>
+
+    <button class="btn-main" onclick="triggerIphoneShortcut('管理者を呼ぶ')" style="background: #ffc107; color: black;">🔔 管理者を呼ぶ</button>
+    <button class="btn-sub" onclick="confirmFinish()" style="background: #b40000; color: white;">■ 生産終了</button>
+</div>
 
     <div id="mgmt-modal" class="modal">
         <div class="modal-content">
