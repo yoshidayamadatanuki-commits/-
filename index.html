@@ -328,22 +328,18 @@ function updateStatus(ok) {
             }, SCAN_INTERVAL_MS);
             
         }, 1200);
+
     } else {
-        // NGの時の処理
         document.body.className = "ng";
         document.getElementById("status-display").innerText = "NG";
         isLocked = true;
-
-        // 管理者へ通知を飛ばす
-        callAdmin("NG通知：未登録のQRコードを検知しました");
-
         setTimeout(() => {
             document.getElementById("lock-overlay").style.display = "flex";
             document.getElementById("pw-input").focus();
         }, 500);
     }
 }
-    
+
 function updateCountDisplay() {
     document.getElementById("count-display").innerText = `かんばん照合数: ${okCount} 枚`;
 }
@@ -494,6 +490,7 @@ function exportCSV() {
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
 function triggerIphoneShortcut(statusMessage) {
+    // 1. ログを記録（履歴に表示させるための処理）
     try {
         const now = new Date();
         const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
@@ -502,28 +499,30 @@ function triggerIphoneShortcut(statusMessage) {
         const callLog = {
             date: dateStr,
             time: timeStr,
-            master: "⚠️管理者呼び出し",
+            master: "⚠️管理者呼び出し", // 履歴にこの文字が出る
             result: "CALL"
         };
         
+        // logs配列の先頭に追加
         logs.unshift(callLog);
+        
+        // ローカルストレージに保存（保存名は既存のコードに合わせて kb_v19_logs としています）
         localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
         
+        // 【重要】画面の履歴一覧を即座に更新する
         if (typeof renderRecentLogs === "function") {
             renderRecentLogs();
         }
     } catch (e) {
         console.error("Log error:", e);
     }
-}
 
-function callAdmin(msg) {
-    const statusMessage = msg || "管理者を呼んでいます";
+    // 2. iPhoneショートカットを起動
     const shortcutName = encodeURIComponent("QR通知");
-    const text = encodeURIComponent(statusMessage);
+    const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // 画面ロック処理
+    // 3. 画面ロック
     setTimeout(() => {
         const overlay = document.getElementById("admin-lock-overlay");
         if (overlay) {
@@ -532,7 +531,7 @@ function callAdmin(msg) {
 
         let pass = "";
         while (pass !== "8181") {
-            pass = prompt(statusMessage + "\n管理者の解除パスワードを入力してください：");
+            pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
             if (pass === null) pass = ""; 
         }
 
