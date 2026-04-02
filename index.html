@@ -46,26 +46,24 @@
         .log-display-area { background: #fff; color: #333; height: 115px; overflow: hidden; padding: 0 20px; border-bottom: 1px solid #ddd; }
         .log-item { padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
 
-        /* ボタン群 */
 .btn-group {
-    display: flex;
-    flex-direction: column; /* ボタンを縦に並べる */
-    align-items: center;    /* 中央に寄せる */
-    gap: 10px;              /* ボタン同士の隙間を空ける */
-    width: 100%;            /* グループ全体の幅を最大に */
-    margin: 20px 0;         /* 前後の余白 */
+    display: grid;           /* 横並びのグリッド形式 */
+    grid-template-columns: 1fr 1fr; /* 50%ずつ2列に分ける */
+    gap: 12px;               /* ボタン同士の隙間 */
+    width: 95%;              /* 画面幅いっぱいに広げる */
+    margin: 20px auto;       /* 上下に余白を作り、左右中央に配置 */
 }
 
 /* ボタン共通の土台設定 */
 .btn-main, .btn-sub {
-    width: 90%;             /* 画面の90%の幅にする（少し余白を残す） */
-    max-width: 400px;       /* 横長になりすぎないように制限 */
-    padding: 15px;          /* 押しやすいように厚みを出す */
+    width: 100%;             /* グリッドの枠いっぱいに広げる */
+    padding: 18px 5px;       /* 押しやすいように縦に厚みをもたせる */
     border: none;
-    border-radius: 8px;     /* 角を丸く */
-    font-size: 16px;        /* 文字を大きく */
+    border-radius: 10px;     /* 角を少し丸く */
+    font-size: 14px;         /* 2つ並びなので少し文字を調整 */
     font-weight: bold;
     cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 少し浮き上がらせる */
 }
         /* NGロック用オーバーレイ */
         #lock-overlay { 
