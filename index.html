@@ -308,25 +308,34 @@ function tick() {
     requestAnimationFrame(tick);
 }
 
+// NG時に1回だけ呼び出すための管理フラグ（関数の外に置いてください）
+let hasCalledAdmin = false; 
+
 function updateStatus(ok) {
     if (ok) {
-        okCount++;
-        updateCountDisplay();
         document.body.className = "ok";
         document.getElementById("status-display").innerText = "OK";
-        
-        } else {
+        isLocked = false;
+        hasCalledAdmin = false; // OKになったらリセット
+    } else {
         document.body.className = "ng";
         document.getElementById("status-display").innerText = "NG";
-        isLocked = true;
         
-        // 🔽 追加：NG発生時に自動で管理者を呼び出す（自動フラグを true にする）
-        triggerIphoneShortcut('NG発生により管理者を呼出', true);
+        // 🔽 修正：まだ呼び出していない場合のみ、1回だけ実行
+        if (!isLocked && !hasCalledAdmin) {
+            isLocked = true;
+            hasCalledAdmin = true; 
+            
+            // 0.5秒だけ待ってからショートカットを起動（ブロック回避のコツ）
+            setTimeout(() => {
+                triggerIphoneShortcut('NG発生により管理者を呼出', true);
+            }, 500);
 
-        setTimeout(() => {
-            document.getElementById("lock-overlay").style.display = "flex";
-            document.getElementById("pw-input").focus();
-        }, 500);
+            setTimeout(() => {
+                document.getElementById("lock-overlay").style.display = "flex";
+                document.getElementById("pw-input").focus();
+            }, 1000);
+        }
     }
 }
         setTimeout(() => {
