@@ -489,37 +489,44 @@ function exportCSV() {
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
-function callAdmin(statusMessage) {
-    // ログ記録
-    addLog("管理者呼び出し", statusMessage || "ボタン押下");
+// 1. 通知だけを飛ばす関数（ロック画面のボタンから呼ばれる）
+function triggerAdminCall() {
+    addLog("管理者呼び出し", "ロック画面からの呼び出し");
+    
+    const shortcutName = encodeURIComponent("QR通知");
+    const text = encodeURIComponent("ロック画面から管理者が呼ばれました");
+    window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
+    
+    alert("管理者に通知を送信しました。");
+}
 
-    // iOSショートカット呼び出し（QR通知）
+// 2. パスワード入力を求める関数
+function requestUnlock() {
+    let pass = prompt("管理者の解除パスワードを入力してください：");
+    if (pass === "8181") {
+        document.getElementById("admin-lock-overlay").style.display = "none";
+        alert("ロックを解除しました。");
+    } else if (pass !== null) {
+        alert("パスワードが違います。");
+    }
+}
+
+// 3. 元の callAdmin 関数（エラー時にロック画面を出す用）
+function callAdmin(statusMessage) {
+    addLog("システムロック", statusMessage || "自動ロック");
+
+    // ロック画面を表示
+    const overlay = document.getElementById("admin-lock-overlay");
+    if (overlay) {
+        overlay.style.display = "flex";
+    }
+
+    // iOSショートカット呼び出し
     const shortcutName = encodeURIComponent("QR通知");
     const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // すでにロック画面（オーバーレイ）が表示されている場合は、パスワード入力をスキップして終了
-    const overlay = document.getElementById("admin-lock-overlay");
-    if (overlay && overlay.style.display === "flex") {
-        alert("管理者を呼び出しました。そのままお待ちください。");
-        return; 
-    }
-
-    // 通常画面からの呼び出し時の処理
-    setTimeout(() => {
-        if (overlay) overlay.style.display = "flex";
-
-        let pass = "";
-        while (pass !== "8181") {
-            pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
-            if (pass === null) break; // キャンセル対応
-        }
-
-        if (pass === "8181") {
-            if (overlay) overlay.style.display = "none";
-            alert("ロックを解除しました。");
-        }
-    }, 1000);
+    // ※ ここで while(prompt) を使わないのがコツです
 }
 
 // ページ読み込み時の初期化
