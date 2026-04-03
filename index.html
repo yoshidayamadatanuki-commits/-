@@ -328,11 +328,17 @@ function updateStatus(ok) {
             }, SCAN_INTERVAL_MS);
             
         }, 1200);
-
     } else {
         document.body.className = "ng";
         document.getElementById("status-display").innerText = "NG";
         isLocked = true;
+
+        // --- 追加：NG発生時にショートカット通知を起動 ---
+        const shortcutName = encodeURIComponent("QR通知");
+        const text = encodeURIComponent("【NG発生】かんばん照合で不一致が発生しました");
+        window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
+        // ------------------------------------------------
+
         setTimeout(() => {
             document.getElementById("lock-overlay").style.display = "flex";
             document.getElementById("pw-input").focus();
