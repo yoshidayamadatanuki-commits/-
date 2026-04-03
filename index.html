@@ -523,31 +523,22 @@ function triggerIphoneShortcut(statusMessage) {
         console.error("Log error:", e);
     }
 
-    // 2. iPhoneショートカットを起動
-    const shortcutName = encodeURIComponent("QR通知");
+   const shortcutName = encodeURIComponent("QR通知");
     const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // 3. 画面ロック
+    // 2. 画面ロックの表示
+    // prompt（ダイアログ）を使わず、画面上のオーバーレイを表示して入力を待つ
     setTimeout(() => {
         const overlay = document.getElementById("admin-lock-overlay");
         if (overlay) {
             overlay.style.display = "flex";
+            // オーバーレイ内のパスワード入力欄にフォーカスを当てる
+            const passInput = document.getElementById("admin-pw-input");
+            if (passInput) passInput.focus();
         }
-
-        let pass = "";
-        while (pass !== "8181") {
-            pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
-            if (pass === null) pass = ""; 
-        }
-
-        if (overlay) {
-            overlay.style.display = "none";
-        }
-        alert("ロックを解除しました。");
-    }, 1000);
+    }, 500);
 }
-
 // ページ読み込み時の初期化
 renderMasters(); 
 renderEditList(); 
