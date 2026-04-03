@@ -490,31 +490,29 @@ function exportCSV() {
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
 function callAdmin(statusMessage) {
-    // 1. ログ記録
+    // ログ記録
     addLog("管理者呼び出し", statusMessage || "ボタン押下");
 
-    // 2. iOSショートカット呼び出し
+    // iOSショートカット呼び出し（QR通知）
     const shortcutName = encodeURIComponent("QR通知");
     const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // すでにロック画面が表示されている場合は、以下のロック処理をスキップ
-    if (document.getElementById("admin-lock-overlay").style.display === "flex") {
+    // すでにロック画面（オーバーレイ）が表示されている場合は、パスワード入力をスキップして終了
+    const overlay = document.getElementById("admin-lock-overlay");
+    if (overlay && overlay.style.display === "flex") {
         alert("管理者を呼び出しました。そのままお待ちください。");
-        return;
+        return; 
     }
 
-    // 3. 画面ロック（通常時からの呼び出しの場合）
+    // 通常画面からの呼び出し時の処理
     setTimeout(() => {
-        const overlay = document.getElementById("admin-lock-overlay");
-        if (overlay) {
-            overlay.style.display = "flex";
-        }
+        if (overlay) overlay.style.display = "flex";
 
         let pass = "";
         while (pass !== "8181") {
             pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
-            if (pass === null) break; // キャンセル可能にする場合は break
+            if (pass === null) break; // キャンセル対応
         }
 
         if (pass === "8181") {
