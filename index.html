@@ -308,38 +308,13 @@ function tick() {
     requestAnimationFrame(tick);
 }
 
-let hasCalledAdmin = false;
-
 function updateStatus(ok) {
     if (ok) {
+        okCount++;
+        updateCountDisplay();
         document.body.className = "ok";
         document.getElementById("status-display").innerText = "OK";
-        isLocked = false;
-        hasCalledAdmin = false; // OKならリセット
-    } else {
-        document.body.className = "ng";
-        document.getElementById("status-display").innerText = "NG";
         
-        if (!isLocked) {
-            isLocked = true;
-            
-            // 🔽 NG発生時の処理
-            setTimeout(function() {
-                document.getElementById("lock-overlay").style.display = "flex";
-                document.getElementById("pw-input").focus();
-                
-                // 自動で通知を試みる（ブラウザにブロックされる場合は確認が出る）
-                if (!hasCalledAdmin) {
-                    hasCalledAdmin = true;
-                    // Safariのブロックを回避するため、確認画面を出してから通知する
-                    if (confirm("【NG判定】管理者に通知を送信しますか？")) {
-                        triggerIphoneShortcut('NG発生により管理者を呼出', true);
-                    }
-                }
-            }, 500);
-        }
-    }
-}
         setTimeout(() => {
             isInterval = true;
             isProcessing = false;
@@ -514,51 +489,58 @@ function exportCSV() {
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
-function triggerIphoneShortcut(statusMessage, isAuto) {
-    // 引数の初期値を設定（古いiPhone対策）
-    var autoFlag = isAuto || false;
-
-    // 1. ログを記録
+function triggerIphoneShortcut(statusMessage) {
+    // 1. ログを記録（履歴に表示させるための処理）
     try {
-        var now = new Date();
-        var timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-        var dateStr = (now.getMonth() + 1) + "/" + now.getDate();
-        var callLog = {
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        const dateStr = (now.getMonth() + 1) + "/" + now.getDate();
+        
+        const callLog = {
             date: dateStr,
             time: timeStr,
-            master: "⚠️管理者呼び出し",
+            master: "⚠️管理者呼び出し", // 履歴にこの文字が出る
             result: "CALL"
         };
+        
+        // logs配列の先頭に追加
         logs.unshift(callLog);
+        
+        // ローカルストレージに保存（保存名は既存のコードに合わせて kb_v19_logs としています）
         localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
-        if (typeof renderRecentLogs === "function") renderRecentLogs();
+        
+        // 【重要】画面の履歴一覧を即座に更新する
+        if (typeof renderRecentLogs === "function") {
+            renderRecentLogs();
+        }
     } catch (e) {
         console.error("Log error:", e);
     }
 
     // 2. iPhoneショートカットを起動
-    var shortcutName = encodeURIComponent("QR通知");
-    var text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
-    window.location.href = "shortcuts://run-shortcut?name=" + shortcutName + "&input=text&text=" + text;
+    const shortcutName = encodeURIComponent("QR通知");
+    const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
+    window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // 3. 画面ロック（手動ボタンの時だけ実行）
-    if (!autoFlag) {
-        setTimeout(function() {
-            var overlay = document.getElementById("admin-lock-overlay");
-            if (overlay) overlay.style.display = "flex";
+    // 3. 画面ロック
+    setTimeout(() => {
+        const overlay = document.getElementById("admin-lock-overlay");
+        if (overlay) {
+            overlay.style.display = "flex";
+        }
 
-            var pass = "";
-            while (pass !== "8181") {
-                pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
-                if (pass === null) pass = ""; 
-            }
+        let pass = "";
+        while (pass !== "8181") {
+            pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
+            if (pass === null) pass = ""; 
+        }
 
-            if (overlay) overlay.style.display = "none";
-            alert("ロックを解除しました。");
-        }, 1000);
-    }
+        if (overlay) {
+            overlay.style.display = "none";
+        }
+        alert("ロックを解除しました。");
+    }, 1000);
 }
-
 
 // ページ読み込み時の初期化
 renderMasters(); 
@@ -568,12 +550,12 @@ renderRecentLogs();
 
 <div id="admin-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 999999; text-align: center; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif;">
     <div style="padding: 20px;">
-        <h1 style="color: #ffc107; font-size: 2.5rem; margin-bottom: 20px;">⚠️ 管理者呼び出し中</h1>
-        <p style="font-size: 1.5rem; line-height: 1.6;">
-            管理者が来るまで<br>
-            <span style="color: #f44336; font-weight: bold;">作業を中断すること</span>
-        </p>
-        <p style="margin-top: 50px; color: #888;">(管理者が解除パスワードを入力してください)</p>
+        <h2 style="color: #ff4444; font-size: 24px; margin-bottom: 20px;">作業中断中</h2>
+        <p style="margin-bottom: 30px;">管理者の解除パスワードが必要です。</p>
+        
+        <button onclick="callAdmin('ロック画面からの呼び出し')" style="background: #ff9500; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 18px; font-weight: bold; margin-bottom: 20px; width: 80%; max-width: 300px; cursor: pointer;">
+            管理者を呼ぶ
+        </button>
     </div>
 </div>
 </body>
