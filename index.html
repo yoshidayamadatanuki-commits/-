@@ -489,44 +489,57 @@ function exportCSV() {
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
-// 1. 通知だけを飛ばす関数（ロック画面のボタンから呼ばれる）
-function triggerAdminCall() {
-    addLog("管理者呼び出し", "ロック画面からの呼び出し");
-    
-    const shortcutName = encodeURIComponent("QR通知");
-    const text = encodeURIComponent("ロック画面から管理者が呼ばれました");
-    window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
-    
-    alert("管理者に通知を送信しました。");
-}
-
-// 2. パスワード入力を求める関数
-function requestUnlock() {
-    let pass = prompt("管理者の解除パスワードを入力してください：");
-    if (pass === "8181") {
-        document.getElementById("admin-lock-overlay").style.display = "none";
-        alert("ロックを解除しました。");
-    } else if (pass !== null) {
-        alert("パスワードが違います。");
-    }
-}
-
-// 3. 元の callAdmin 関数（エラー時にロック画面を出す用）
-function callAdmin(statusMessage) {
-    addLog("システムロック", statusMessage || "自動ロック");
-
-    // ロック画面を表示
-    const overlay = document.getElementById("admin-lock-overlay");
-    if (overlay) {
-        overlay.style.display = "flex";
+function triggerIphoneShortcut(statusMessage) {
+    // 1. ログを記録（履歴に表示させるための処理）
+    try {
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        const dateStr = (now.getMonth() + 1) + "/" + now.getDate();
+        
+        const callLog = {
+            date: dateStr,
+            time: timeStr,
+            master: "⚠️管理者呼び出し", // 履歴にこの文字が出る
+            result: "CALL"
+        };
+        
+        // logs配列の先頭に追加
+        logs.unshift(callLog);
+        
+        // ローカルストレージに保存（保存名は既存のコードに合わせて kb_v19_logs としています）
+        localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
+        
+        // 【重要】画面の履歴一覧を即座に更新する
+        if (typeof renderRecentLogs === "function") {
+            renderRecentLogs();
+        }
+    } catch (e) {
+        console.error("Log error:", e);
     }
 
-    // iOSショートカット呼び出し
+    // 2. iPhoneショートカットを起動
     const shortcutName = encodeURIComponent("QR通知");
     const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // ※ ここで while(prompt) を使わないのがコツです
+    // 3. 画面ロック
+    setTimeout(() => {
+        const overlay = document.getElementById("admin-lock-overlay");
+        if (overlay) {
+            overlay.style.display = "flex";
+        }
+
+        let pass = "";
+        while (pass !== "8181") {
+            pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
+            if (pass === null) pass = ""; 
+        }
+
+        if (overlay) {
+            overlay.style.display = "none";
+        }
+        alert("ロックを解除しました。");
+    }, 1000);
 }
 
 // ページ読み込み時の初期化
@@ -535,18 +548,14 @@ renderEditList();
 renderRecentLogs();
 </script>
 
-<div id="admin-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); color: #fff; z-index: 9999999; text-align: center; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif;">
-    <div style="padding: 20px; width: 90%; max-width: 400px; background: #222; border-radius: 20px; border: 2px solid #ff4444; box-shadow: 0 0 20px rgba(255,0,0,0.5);">
-        <h2 style="color: #ff4444; font-size: 28px; margin-bottom: 10px;">作業中断中</h2>
-        <p style="margin-bottom: 30px; font-size: 16px; color: #ccc;">管理者の解除パスワードが必要です。</p>
-        
-        <button id="call-admin-btn" onclick="triggerAdminCall()" style="background: #ff9500; color: white; border: none; padding: 20px; border-radius: 15px; font-size: 22px; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 20px; -webkit-appearance: none;">
-            🔔 管理者を呼ぶ
-        </button>
-
-        <button onclick="requestUnlock()" style="background: transparent; color: #888; border: 1px solid #444; padding: 10px; border-radius: 10px; font-size: 14px; width: 100%;">
-            パスワード入力
-        </button>
+<div id="admin-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 999999; text-align: center; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif;">
+    <div style="padding: 20px;">
+        <h1 style="color: #ffc107; font-size: 2.5rem; margin-bottom: 20px;">⚠️ 管理者呼び出し中</h1>
+        <p style="font-size: 1.5rem; line-height: 1.6;">
+            管理者が来るまで<br>
+            <span style="color: #f44336; font-weight: bold;">作業を中断すること</span>
+        </p>
+        <p style="margin-top: 50px; color: #888;">(管理者が解除パスワードを入力してください)</p>
     </div>
 </div>
 </body>
