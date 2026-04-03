@@ -315,6 +315,20 @@ function updateStatus(ok) {
         document.body.className = "ok";
         document.getElementById("status-display").innerText = "OK";
         
+        } else {
+        document.body.className = "ng";
+        document.getElementById("status-display").innerText = "NG";
+        isLocked = true;
+        
+        // 🔽 追加：NG発生時に自動で管理者を呼び出す（自動フラグを true にする）
+        triggerIphoneShortcut('NG発生により管理者を呼出', true);
+
+        setTimeout(() => {
+            document.getElementById("lock-overlay").style.display = "flex";
+            document.getElementById("pw-input").focus();
+        }, 500);
+    }
+}
         setTimeout(() => {
             isInterval = true;
             isProcessing = false;
@@ -489,27 +503,24 @@ function exportCSV() {
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `scan_report.csv`; a.click();
 }
-function triggerIphoneShortcut(statusMessage) {
+// 🔽 引数に isAuto = false を追加
+function triggerIphoneShortcut(statusMessage, isAuto = false) {
     // 1. ログを記録（履歴に表示させるための処理）
     try {
         const now = new Date();
         const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
         const dateStr = (now.getMonth() + 1) + "/" + now.getDate();
-        
         const callLog = {
             date: dateStr,
             time: timeStr,
             master: "⚠️管理者呼び出し", // 履歴にこの文字が出る
             result: "CALL"
         };
-        
         // logs配列の先頭に追加
         logs.unshift(callLog);
-        
-        // ローカルストレージに保存（保存名は既存のコードに合わせて kb_v19_logs としています）
+        // ローカルストレージに保存
         localStorage.setItem("kb_v19_logs", JSON.stringify(logs));
-        
-        // 【重要】画面の履歴一覧を即座に更新する
+        // 画面の履歴一覧を即座に更新する
         if (typeof renderRecentLogs === "function") {
             renderRecentLogs();
         }
@@ -522,24 +533,27 @@ function triggerIphoneShortcut(statusMessage) {
     const text = encodeURIComponent(statusMessage || "管理者を呼んでいます");
     window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=text&text=${text}`;
 
-    // 3. 画面ロック
-    setTimeout(() => {
-        const overlay = document.getElementById("admin-lock-overlay");
-        if (overlay) {
-            overlay.style.display = "flex";
-        }
+    // 3. 画面ロック 
+    // 🔽 自動呼び出し(isAuto === true)ではない場合のみ、promptのロックを実行する
+    if (!isAuto) {
+        setTimeout(() => {
+            const overlay = document.getElementById("admin-lock-overlay");
+            if (overlay) {
+                overlay.style.display = "flex";
+            }
 
-        let pass = "";
-        while (pass !== "8181") {
-            pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
-            if (pass === null) pass = ""; 
-        }
+            let pass = "";
+            while (pass !== "8181") {
+                pass = prompt("【作業中断中】\n管理者の解除パスワードを入力してください：");
+                if (pass === null) pass = ""; 
+            }
 
-        if (overlay) {
-            overlay.style.display = "none";
-        }
-        alert("ロックを解除しました。");
-    }, 1000);
+            if (overlay) {
+                overlay.style.display = "none";
+            }
+            alert("ロックを解除しました。");
+        }, 1000);
+    }
 }
 
 // ページ読み込み時の初期化
